@@ -15,6 +15,8 @@
 // mesh
 #include "ObjParser_OGL3.h"
 
+#include <imgui/imgui.h>
+
 class CMyApp
 {
 public:
@@ -30,14 +32,26 @@ public:
 	void MainWindow();
 	void Window1();
 	void Window2();
-	void Verify(char[]);
-	struct PictureData
-	{
-		GLuint textureID;
-		int width;
-		int height;
-	};
-	PictureData LoadImage(const char*);
+	void Verify(const char strIn[], SDL_Surface* imageSurface, GLuint imageTexture);
+	void Verify1(const char strIn[]);
+	void Verify2(const char strIn[]);
+	void Verify3(const char strIn[]);
+
+
+
+	SDL_Surface* loadImageToMemory(const char* filePath);
+	GLuint textureFromSurface(SDL_Surface* surface);
+	void PutPixel32_nolock(SDL_Surface* surface, int x, int y, Uint32 color);
+	void PutPixel32(SDL_Surface* surface, int x, int y, Uint32 color);
+
+
+	Uint8 greyscale(Uint32 pixel, SDL_PixelFormat* format);
+	float Mean(Uint8* pixels, int size);
+	float Variance(Uint8* pixels, float mean, int size);
+	float Covariance(Uint8* pixels1, Uint8* pixels2, float mean1, float mean2, int size);
+	float SSIM(Uint8* window1, Uint8* window2, int size);
+	SDL_Surface* SSIMSurface(SDL_Surface* img1, SDL_Surface* img2, int windowSize);
+
 
 	void KeyboardDown(SDL_KeyboardEvent&);
 	void KeyboardUp(SDL_KeyboardEvent&);
@@ -46,10 +60,9 @@ public:
 	void MouseUp(SDL_MouseButtonEvent&);
 	void MouseWheel(SDL_MouseWheelEvent&);
 	void Resize(int, int);
+
 protected:
-	// belsõ eljárások
-	void DrawGround();
-	void DrawMesh();
+
 
 	// shaderekhez szükséges változók
 	GLuint m_programID; // shaderek programja
@@ -102,6 +115,33 @@ protected:
 		WINDOW2
 	};
 	Windows currentWindow = WINDOW_MAIN;
-	char str0[128] = "C:/Users/User/Pictures/ac.jpg";
+	ImGuiWindowFlags window_flags;
+	char str1[128];
+	char str2[128];
+	char str3[128];
+	bool upd;
+	ImVec2 u0;
+	ImVec2 u1;
+	int zoomW;
+	int zoomH;
+	float zoomTimes;
+	int smallW;
+	int smallH;
+	int bigW;
+	int bigH;
+	char outstr1[128];
+	char outstr2[128];
+	int ssimSize;
+	const float C1 = 5.3565f, C2 = 108.6455f;
+
+	SDL_Surface* imageSurface1;
+	GLuint imageTexture1;
+
+	SDL_Surface* imageSurface2;
+	GLuint imageTexture2;
+	SDL_Surface* imageSurface3;
+	GLuint imageTexture3;
+	SDL_Surface* ssimSurface;
+	GLuint ssimTexture;
 };
 

@@ -1,5 +1,9 @@
 #define STB_IMAGE_IMPLEMENTATION
 
+#define _CRT_SECURE_NO_WARNINGS
+
+#define IM_ALLOC(_SIZE)                     ImGui::MemAlloc(_SIZE)
+#define IM_FREE(_PTR)                       ImGui::MemFree(_PTR)
 
 #include "MyApp.h"
 #include "GLUtils.hpp"
@@ -8,8 +12,6 @@
 #include <imgui/imgui.h>
 #include "stb_image.h"
 
-//#define _CRT_SECURE_NO_WARNINGS
-
 CMyApp::CMyApp(void)
 {
 	m_vaoID = 0;
@@ -17,8 +19,39 @@ CMyApp::CMyApp(void)
 	m_programID = 0;
 	m_waterTextureID = 0;
 	m_samplerID = 0;
-
 	m_mesh = 0;
+
+	window_flags = ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_HorizontalScrollbar;
+	u0 = ImVec2(0, 0);
+	u1 = ImVec2(1, 1);
+	upd = true;
+	strcpy(str1, "C:/Users/User/Pictures/ac.jpg");
+	strcpy(str2, "C:/Users/User/Pictures/ac.jpg");
+	strcpy(str3, "C:/Users/User/Pictures/ac.jpg");
+
+	imageSurface1 = loadImageToMemory("C:/Users/User/Pictures/ac.jpg");
+	imageTexture1 = textureFromSurface(imageSurface1);
+
+	imageSurface2 = loadImageToMemory("C:/Users/User/Pictures/ac2.jpg");
+	imageTexture2 = textureFromSurface(imageSurface2);
+	imageSurface3 = loadImageToMemory("C:/Users/User/Pictures/ac.jpg");
+	imageTexture3 = textureFromSurface(imageSurface3);
+	ssimSize = 1;
+
+	ssimSurface = SSIMSurface(imageSurface2, imageSurface3, ssimSize);
+	ssimTexture = textureFromSurface(ssimSurface);
+
+	zoomW = 100;
+	zoomH = 50;
+	zoomTimes = 2.f;
+
+	smallW = 0;
+	smallH = 0;
+	bigW = 0;
+	bigH = 0;
+
+	strcpy(outstr1, "C:/Users/User/Pictures/save.png");
+	strcpy(outstr2, "C:/Users/User/Pictures/ssim.png");
 }
 
 
@@ -222,6 +255,86 @@ float df(float t) {
 	return 2 * t;
 }
 
+Uint8 CMyApp::greyscale(Uint32 pixel, SDL_PixelFormat* format) {
+	Uint8 r, g, b;
+	SDL_GetRGB(pixel, format, &r, &g, &b);
+	return 0.299f * r + 0.587f * g + 0.114f * b;
+}
+
+float CMyApp::Mean(Uint8* pixels, int size) {
+	float mean = 0.f;
+	for (int i = 0; i < size; ++i) {
+		mean += pixels[i];
+	}
+	return mean / size;
+}
+
+float CMyApp::Variance(Uint8* pixels, float mean, int size) {
+	float var = 0.f;
+	for (int i = 0; i < size; ++i) {
+		var +=  (pixels[i] - mean) * (pixels[i] - mean);
+	}
+	return var / size;
+}
+
+float CMyApp::Covariance(Uint8* pixels1, Uint8* pixels2, float mean1, float mean2, int size) {
+	float covar = 0.f;
+	for (int i = 0; i < size; ++i) {
+		covar += (pixels1[i] - mean1) * (pixels2[i] - mean2);
+	}
+	return covar / size;
+}
+
+float CMyApp::SSIM(Uint8* window1, Uint8* window2, int size) {
+	float mean1 = Mean(window1, size);
+	float mean2 = Mean(window2, size);
+	float var1 = Variance(window1, mean1, size);
+	float var2 = Variance(window2, mean2, size);
+	float covariance = Covariance(window1, window2, mean1, mean2, size);
+
+	return ((2 * mean1 * mean2 + C1) * (2 * covariance + C2)) / ((mean1 * mean1 + mean2 * mean2 + C1) * (var1 + var2 + C2));
+}
+
+SDL_Surface* CMyApp::SSIMSurface(SDL_Surface* img1, SDL_Surface* img2, int windowSize) {
+
+	//TODO: módosítás!!
+	SDL_Surface* ssimSurface = SDL_CreateRGBSurface(0, img1->w, img1->h, img1->format->BitsPerPixel, 0x00FF0000, 0x0000FF00, 0x000000FF, 0xFF000000);
+
+	//SDL_LockSurface(ssimSurface);
+
+	for (int x = 0; x < ssimSurface->w; x += windowSize) {
+		for (int y = 0; y < ssimSurface->h; y += windowSize) {
+			int count = 0;
+			Uint8* grey1 = new Uint8[windowSize * windowSize];
+			Uint8* grey2 = new Uint8[windowSize * windowSize];
+			for (int i = 0; i < windowSize; i++) {
+				for (int j = 0; j < windowSize; j++) {
+					
+					//TODO: unify the getpixels!!
+					grey1[count] = greyscale(((Uint32*)img1->pixels)[(y + j) * ssimSurface->w + (x + i)], img1->format);
+					grey2[count] = greyscale(((Uint32*)img2->pixels)[(y + j) * ssimSurface->w + (x + i)], img2->format);
+					count++;
+				}
+			}
+
+			float ssimValue = SSIM(grey1, grey2, count);
+			Uint8 rgb = (Uint8)((ssimValue + 1.0) * 255 / 2);
+
+			for (int i = 0; i < windowSize; i++) {
+				for (int j = 0; j < windowSize; j++) {
+					if (x + i < ssimSurface->w && y + j < ssimSurface->h) {
+
+						PutPixel32(ssimSurface, x+i, y+j, SDL_MapRGB(ssimSurface->format, rgb, rgb, rgb));
+					}
+				}
+			}
+		}
+	}
+
+	//SDL_UnlockSurface(ssimSurface);
+
+	return ssimSurface;
+}
 
 void CMyApp::Render()
 {
@@ -229,6 +342,11 @@ void CMyApp::Render()
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 	glUniform3f(glGetUniformLocation(m_programID, "eye_pos"), m_eye.x, m_eye.y, m_eye.z);
+
+	ImGuiIO io = ImGui::GetIO();
+	ImGui::SetNextWindowSize(ImVec2(io.DisplaySize.x, io.DisplaySize.y));
+	ImGui::SetNextWindowPos(ImVec2(0,0));
+	ImGui::GetStyle().WindowRounding = 0.0f;
 
 	switch (currentWindow) {
 		case WINDOW_MAIN:
@@ -244,7 +362,7 @@ void CMyApp::Render()
 }
 
 void CMyApp::MainWindow() {
-	ImGui::Begin("Main");
+	ImGui::Begin("Main",0,window_flags);
 	if (ImGui::Button("Window1")) {
 		currentWindow = WINDOW1;
 	}
@@ -256,37 +374,89 @@ void CMyApp::MainWindow() {
 }
 
 void CMyApp::Window1() {
-	ImGui::Begin("First");
+	Uint32 red = (255 << 24) | (0 << 16) | (0 << 8) | 255;
+
+	ImGui::Begin("First",0,window_flags);
 	ImGui::Text("A kep eleresi utvonala");
-	ImGui::InputText("", str0, IM_ARRAYSIZE(str0));
-	if (ImGui::Button("Verify")) {
-		Verify(str0);
+	ImGui::InputText(" ", str1, IM_ARRAYSIZE(str1));
+	if (ImGui::Button("Verify ")) {
+		//Verify(str1,imageSurface1,imageTexture1);
+		Verify1(str1);
 	}
 
 	ImGuiIO& io = ImGui::GetIO();
-		
-	PictureData texture = LoadImage(str0);
-	GLuint my_image_texture = texture.textureID;
-	ImTextureID my_tex_id = (ImTextureID)(intptr_t)my_image_texture;
-	float my_tex_w = texture.width;
-	float my_tex_h = texture.height;
+	ImTextureID my_tex_id = (ImTextureID)(intptr_t)imageTexture1;
+	
+	//ImVec2 pos = ImGui::GetCursorScreenPos();
+	ImGui::Image((void*)(intptr_t)imageTexture1, ImVec2(imageSurface1->w, imageSurface1->h));
 
-	//ImGui::Text("%.0fx%.0f", my_tex_w, my_tex_h);
-	ImVec2 pos = ImGui::GetCursorScreenPos();
-	ImGui::Image(my_tex_id, ImVec2(my_tex_w, my_tex_h), ImVec2(0, 0), ImVec2(1, 1), ImColor(255, 255, 255, 255), ImColor(255, 255, 255, 128));
-	ImVec2 u0 = ImVec2(0,0);
-	ImVec2 u1 = ImVec2(1, 1);
-	if (ImGui::IsItemHovered())
+	ImGui::InputFloat("ZoomTimes",&zoomTimes,0.1f,1.f);
+	ImGui::InputInt("ZoomWidth",&zoomW);
+	ImGui::InputInt("ZoomHeight", &zoomH);
+	ImGui::InputInt("SmallWidth", &smallW);
+	ImGui::InputInt("SmallHeight", &smallH);
+	ImGui::InputInt("BigWidth", &bigW);
+	ImGui::InputInt("BigHeight", &bigH);
+	/*if (ImGui::IsItemHovered())
 	{
 		float focus_sz = 32.0f;
 		float focus_x = io.MousePos.x - pos.x - focus_sz * 0.5f; if (focus_x < 0.0f) focus_x = 0.0f; else if (focus_x > my_tex_w - focus_sz) focus_x = my_tex_w - focus_sz;
 		float focus_y = io.MousePos.y - pos.y - focus_sz * 0.5f; if (focus_y < 0.0f) focus_y = 0.0f; else if (focus_y > my_tex_h - focus_sz) focus_y = my_tex_h - focus_sz;
 		ImVec2 uv0 = ImVec2((focus_x) / my_tex_w, (focus_y) / my_tex_h);
-		u0 = uv0;
 		ImVec2 uv1 = ImVec2((focus_x + focus_sz) / my_tex_w, (focus_y + focus_sz) / my_tex_h);
-		u1 = uv1;
+		if (upd) {
+			u0 = uv0;
+			u1 = uv1;
+		}
 	}
 	ImGui::Image(my_tex_id, ImVec2(128, 128), u0, u1, ImColor(255, 255, 255, 255), ImColor(255, 255, 255, 128));
+	*/
+	if (ImGui::Button("Zoom")) {
+
+		Verify1(str1);
+
+		for (int i = zoomW*zoomTimes; i > 0; i--) {
+			for (int j = zoomH*zoomTimes; j > 0; j--) {
+				if (i == 1 || i == std::floor(zoomW * zoomTimes)|| j == 1 || j == std::floor(zoomH * zoomTimes) ) {
+					PutPixel32(imageSurface1, imageSurface1->w-i-bigW-1, imageSurface1->h-j-bigH- 1, red);
+				}
+				else {
+					PutPixel32(imageSurface1, imageSurface1->w-i-bigW-1 , imageSurface1->h-j-bigH-1, *(Uint32*)((Uint8*)imageSurface1->pixels + int((zoomH*zoomTimes-j)/zoomTimes + smallH) * imageSurface1->pitch + int((zoomW*zoomTimes-i)/zoomTimes + smallW) * imageSurface1->format->BytesPerPixel));
+				}
+			}
+		}
+		for (int i = 0+smallW; i < zoomW+smallW; i++) {
+			for (int j = 0+smallH; j < zoomH+smallH; j++) {
+				if (i == 0+smallW || j == 0+smallH || i == zoomW+smallW - 1 || j == zoomH+smallH - 1) {
+					PutPixel32(imageSurface1, i,j, red);
+				}
+			}
+		}
+		ImVec2 small1 = ImVec2(smallW, zoomH+smallH);
+		ImVec2 small2 = ImVec2(zoomW + smallW, smallH);
+		ImVec2 big1 = ImVec2(imageSurface1->w - bigW - zoomW * zoomTimes, imageSurface1->h - bigH);
+		ImVec2 big2 = ImVec2(imageSurface1->w-bigW, imageSurface1->h - bigH - zoomH * zoomTimes);
+		float slope1 = (big1.y - small1.y) / (big1.x - small1.x);
+		float slope2 = (big2.y - small2.y) / (big2.x - small2.x);
+		float b1 = small1.y - slope1 * small1.x;
+		float b2 = small2.y - slope2 * small2.x;
+		for (int i = 0; i < imageSurface1->w; i++) {
+			for (int j = 0; j < imageSurface1->h; j++) {
+				if ((j == int(slope1 * i + b1) && i>=small1.x && i<=big1.x && j>=small1.y && j<=big1.y) || ( j == int(slope2 * i + b2)) && i>=small2.x && i<=big2.x && j>=small2.y && j<=big2.y){
+					PutPixel32(imageSurface1, i, j, red);
+				}
+			}
+		}
+
+		imageTexture1 = textureFromSurface(imageSurface1);
+
+
+	}
+
+	ImGui::InputText("SavePath1", outstr1, IM_ARRAYSIZE(outstr1));
+	if (ImGui::Button("Save1")) {
+		IMG_SavePNG(imageSurface1, outstr1);
+	}
 		
 	if (ImGui::Button("Back")) {
 		currentWindow = WINDOW_MAIN;
@@ -295,58 +465,124 @@ void CMyApp::Window1() {
 }
 
 void CMyApp::Window2() {
-	ImGui::Begin("Second");
+	ImGui::Begin("Second",0,window_flags);
+
+	ImGui::Text("A kep eleresi utvonala");
+	ImGui::InputText("  ", str2, IM_ARRAYSIZE(str2));
+	if (ImGui::Button("Verify  ")) {
+		//Verify(str2,imageSurface2,imageTexture2);
+		Verify2(str2);
+	}
+	ImGui::Image((void*)(intptr_t)imageTexture2, ImVec2(imageSurface2->w, imageSurface2->h));
+
+	ImGui::Text("A kep eleresi utvonala");
+	ImGui::InputText("   ", str3, IM_ARRAYSIZE(str3));
+	if (ImGui::Button("Verify   ")) {
+		//Verify(str3,imageSurface3,imageTexture3);
+		Verify3(str3);
+	}
+	ImGui::Image((void*)(intptr_t)imageTexture3, ImVec2(imageSurface3->w, imageSurface3->h));
+
+	ImGui::InputInt("Size", &ssimSize);
+
+	if (ImGui::Button("SSIM")) {
+		ssimSurface = SSIMSurface(imageSurface2, imageSurface3, ssimSize);
+		ssimTexture = textureFromSurface(ssimSurface);
+	}
+
+	ImGui::Image((void*)(intptr_t)ssimTexture, ImVec2(ssimSurface->w, ssimSurface->h));
+
+
+	ImGui::InputText("SavePath2", outstr2, IM_ARRAYSIZE(outstr2));
+	if (ImGui::Button("Save2")) {
+		IMG_SavePNG(ssimSurface, outstr2);
+	}
+
+
 	if (ImGui::Button("Back")) {
 		currentWindow = WINDOW_MAIN;
 	}
 	ImGui::End();
 }
 
-CMyApp::PictureData CMyApp::LoadImage(const char* filename)
+
+void CMyApp::PutPixel32_nolock(SDL_Surface* surface, int x, int y, Uint32 color)
 {
-	PictureData result;
+	Uint8* pixel = (Uint8*)surface->pixels;
+	pixel += (y * surface->pitch) + x * surface ->format->BytesPerPixel;
+	*((Uint32*)pixel) = color;
+}
 
-	int width, height, channels;
+void CMyApp::PutPixel32(SDL_Surface* surface, int x, int y, Uint32 color)
+{
+	if (SDL_MUSTLOCK(surface))
+		SDL_LockSurface(surface);
+	PutPixel32_nolock(surface, x, y, color);
+	if (SDL_MUSTLOCK(surface))
+		SDL_UnlockSurface(surface);
+}
 
-	unsigned char* data = stbi_load(filename, &width, &height, &channels, 0);
-	if (!data)
-	{
-		data = stbi_load("texture.bmp", &width, &height, &channels, 0);
+
+void CMyApp::Verify(const char strIn[], SDL_Surface* imageSurface, GLuint imageTexture) {
+
+	imageSurface = loadImageToMemory(strIn);
+	imageTexture = textureFromSurface(imageSurface);
+
+}
+
+void CMyApp::Verify1(const char strIn[]) {
+
+	//SDL_FreeSurface(imageSurface1);
+	imageSurface1 = loadImageToMemory(strIn);
+	imageTexture1 = textureFromSurface(imageSurface1);
+}
+
+void CMyApp::Verify2(const char strIn[]) {
+
+	imageSurface2 = loadImageToMemory(strIn);
+	imageTexture2 = textureFromSurface(imageSurface2);
+
+}
+
+void CMyApp::Verify3(const char strIn[]) {
+
+	imageSurface3 = loadImageToMemory(strIn);
+	imageTexture3 = textureFromSurface(imageSurface3);
+
+}
+
+
+SDL_Surface* CMyApp::loadImageToMemory(const char* filePath) {
+	SDL_Surface* imageSurface = IMG_Load(filePath);
+	if (!imageSurface) {
+		imageSurface = IMG_Load("texture.bmp");
 	}
-	if (!data)
-	{
-		result.textureID = 50;
-		result.width = result.height = 50;
-		return result;
+	if (!imageSurface) {
+		printf("Failed to load image: %s\n", IMG_GetError());
+		return nullptr;
 	}
 
+	return imageSurface;
+}
+
+GLuint CMyApp::textureFromSurface(SDL_Surface* surface) {
 	GLuint textureID;
 	glGenTextures(1, &textureID);
 	glBindTexture(GL_TEXTURE_2D, textureID);
 
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+	GLenum format = GL_RGBA;
+	if (surface->format->BytesPerPixel == 3) {
+		format = GL_RGB;
+	}
+
+	glTexImage2D(GL_TEXTURE_2D, 0, format, surface->w, surface->h, 0, format, GL_UNSIGNED_BYTE, surface->pixels);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
-	GLenum format = (channels == 4) ? GL_RGBA : GL_RGB;
-
-	glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0, format, GL_UNSIGNED_BYTE, data);
-
-	glGenerateMipmap(GL_TEXTURE_2D);
-
-	stbi_image_free(data);
-
-	result.textureID = textureID;
-	result.width = width;
-	result.height = height;
-
-	return result;
+	glBindTexture(GL_TEXTURE_2D, 0);
+	return textureID;
 }
 
-void CMyApp::Verify(char str[]) {
-	
-}
 
 glm::vec3 CMyApp::toDesc(float fi, float theta) {
 	return glm::vec3(sin(fi) * cos(theta), cos(fi), -sin(fi) * sin(theta));
