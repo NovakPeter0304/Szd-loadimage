@@ -31,21 +31,19 @@ public:
 
 	void MainWindow();
 	void Window1();
-	void Window2();
-	void Verify(const char strIn[], SDL_Surface* imageSurface, GLuint imageTexture);
-	void Verify1(const char strIn[]);
-	void Verify2(const char strIn[]);
-	void Verify3(const char strIn[]);
+	void Window2Column();
+	void Window2AfterColumn();
+	bool Verify(char strIn[],char strInv[],int noErr);
+	void loadImage(const char strIn[],int imageSf);
 
 	void plotLineLow(int x0,int y0,int x1,int y1, SDL_Surface* imageSurface);
 	void plotLineHigh(int x0, int y0, int x1, int y1, SDL_Surface* imageSurface);
 	void plotLine(int x0, int y0, int x1, int y1, SDL_Surface* imageSurface);
 
-	void plotLineSSIM(int x0, int y0, int x1, int y1);
+	void plotLineSSIM(int x, int y, float slope);
 
 	Uint32 GetColor(SDL_Surface* surface,int x,int y);
 
-	SDL_Surface* loadImageToMemory(const char* filePath);
 	GLuint textureFromSurface(SDL_Surface* surface);
 	void PutPixel32_nolock(SDL_Surface* surface, int x, int y, Uint32 color);
 	void PutPixel32(SDL_Surface* surface, int x, int y, Uint32 color);
@@ -114,21 +112,32 @@ protected:
 	float t = 1;
 
 	enum Windows {
-		WINDOW_MAIN,
 		WINDOW1,
 		WINDOW2
 	};
-	Windows currentWindow = WINDOW_MAIN;
+
+	enum Errors {
+		NO = 0,
+		ERR1 = 1,
+		ERR2 = 2,
+		ERR3 = 3,
+		ERR4 = 4,
+		ERR5 = 5
+	};
+
+	Windows currentWindow;
+	Errors currentError;
 	ImGuiWindowFlags window_flags;
 	char str1[128];
-	char str2[128];
+	char str1verified[128];
 	char str3[128];
+	char str3verified[128];
 	bool upd;
-	ImVec2 u0;
-	ImVec2 u1;
+	bool updSSIM;
 	int zoomW;
 	int zoomH;
 	float zoomTimes;
+	float slope;
 	int smallW;
 	int smallH;
 	int bigW;
@@ -141,14 +150,14 @@ protected:
 
 	SDL_Surface* imageSurface1;
 	GLuint imageTexture1;
-
-	SDL_Surface* imageSurface2;
-	GLuint imageTexture2;
+;
 	SDL_Surface* imageSurface3;
 	GLuint imageTexture3;
 	SDL_Surface* ssimSurface;
 	GLuint ssimTexture;
 	SDL_Surface* ssimSurface2;
 	GLuint ssimTexture2;
+	SDL_Surface* zoomSurface;
+	GLuint zoomTexture;
 };
 
