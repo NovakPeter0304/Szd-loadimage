@@ -9,6 +9,8 @@
 #include <imgui/imgui.h>
 #include "stb_image.h"
 
+//#define BACKGROUND ImVec4(183 / 255.f, 201 / 255.f, 226 / 255.f, 1.f);
+
 CMyApp::CMyApp(void)
 {
 	window_flags = ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_HorizontalScrollbar;
@@ -30,19 +32,58 @@ CMyApp::~CMyApp(void)
 {
 }
 
+
 bool CMyApp::Init()
 {
 	// törlési szín legyen kékes
 	glClearColor(0.5f, 0.5f, 1.0f, 1.0f);
+	//glClearColor(85.f/255.f, 128.f/255.f, 187.f/255.f, 1.0f);
 
-	glEnable(GL_CULL_FACE); // kapcsoljuk be a hatrafele nezo lapok eldobasat
-	glEnable(GL_DEPTH_TEST); // mélységi teszt bekapcsolása (takarás)
-	glCullFace(GL_BACK); // GL_BACK: a kamerától "elfelé" nézõ lapok, GL_FRONT: a kamera felé nézõ lapok
+	//glEnable(GL_CULL_FACE); // kapcsoljuk be a hatrafele nezo lapok eldobasat
+	//glEnable(GL_DEPTH_TEST); // mélységi teszt bekapcsolása (takarás)
+	//glCullFace(GL_BACK); // GL_BACK: a kamerától "elfelé" nézõ lapok, GL_FRONT: a kamera felé nézõ lapok
 
 	
-	//
-	// egyéb inicializálás
-	//
+	ImGuiIO& io = ImGui::GetIO();
+
+	ImVector<ImWchar> ranges;
+	ImFontAtlas::GlyphRangesBuilder builder;
+	builder.AddText(u8"áÁéÉíÍóÓöÖõÕúÚüÜûÛ");
+	//builder.AddChar('é');
+	builder.AddRanges(io.Fonts->GetGlyphRangesDefault()); // Add one of the default ranges
+	builder.BuildRanges(&ranges);                          // Build the final result (ordered ranges with all the unique characters submitted)
+	
+
+	float dpiScale = 3.0f;  //rewrite
+	arial = io.Fonts->AddFontFromFileTTF("ARIAL.ttf", 12.0f * dpiScale, NULL, ranges.Data);
+	//notosans = io.Fonts->AddFontFromFileTTF("NOTOSANS.ttf", 12.0f * dpiScale, NULL, ranges.Data);
+	io.FontGlobalScale = 1.0f / dpiScale;
+	io.Fonts->Build();
+
+	Colors[ColorEnum::TEXT_LIGHT] = ImVec4(183 / 255.f, 201 / 255.f, 226 / 255.f, 1.f);
+	Colors[ColorEnum::TEXT_DARK] = ImVec4(16 / 255.f, 26 / 255.f, 40 / 255.f, 1.f);
+	Colors[ColorEnum::TEXT_HINT] = ImVec4(39 / 255.f, 63 / 255.f, 96 / 255.f, 1.f);
+	Colors[ColorEnum::CHILD_BG] = ImVec4(183 / 255.f, 201 / 255.f, 226 / 255.f, 1.f);
+	Colors[ColorEnum::POPUP_BG] = ImVec4(169 / 255.f, 191 / 255.f, 220 / 255.f, 1.f);
+	Colors[ColorEnum::POPUP_BORDER] = ImVec4(39 / 255.f, 63 / 255.f, 96 / 255.f, 1.f);
+	Colors[ColorEnum::SCROLL_GRAB] = ImVec4(44 / 255.f, 72 / 255.f, 110 / 255.f, 1.f);
+	Colors[ColorEnum::SCROLL_GRAB_HOVERED] = ImVec4(50 / 255.f, 81 / 255.f, 124 / 255.f, 1.f);
+	Colors[ColorEnum::SCROLL_GRAB_ACTIVE] = ImVec4(55 / 255.f, 90 / 255.f, 138 / 255.f, 1.f);
+	Colors[ColorEnum::SCROLL_BG] = ImVec4(27 / 255.f, 22 / 255.f, 68 / 255.f, 1.f);
+	Colors[ColorEnum::HEADER] = ImVec4(183 / 255.f, 201 / 255.f, 226 / 255.f, 1.f);
+	Colors[ColorEnum::HEADER_HOVERED] = ImVec4(211 / 255.f, 222 / 255.f, 237 / 255.f, 1.f);
+	Colors[ColorEnum::HEADER_ACTIVE] = ImVec4(239 / 255.f, 243 / 255.f, 249 / 255.f, 1.f);
+	Colors[ColorEnum::INPUT_BG] = ImVec4(127 / 255.f, 159 / 255.f, 203 / 255.f, 1.f);
+	Colors[ColorEnum::BUTTON_BLUE] = ImVec4(55 / 255.f, 90 / 255.0f, 138 / 255.f, 1.f);
+	Colors[ColorEnum::BUTTON_BLUE_HOVERED] = ImVec4(61 / 255.f, 99 / 255.0f, 152 / 255.f, 1.f);
+	Colors[ColorEnum::BUTTON_BLUE_ACTIVE] = ImVec4(67 / 255.f, 108 / 255.0f, 166 / 255.f, 1.f);
+	Colors[ColorEnum::BUTTON_GREEN] = ImVec4(50 / 255.f, 200 / 255.f, 50 / 255.f, 1.f);
+	Colors[ColorEnum::BUTTON_GREEN_HOVERED] = ImVec4(63 / 255.f, 207 / 255.f, 63 / 255.f, 1.f);
+	Colors[ColorEnum::BUTTON_GREEN_ACTIVE] = ImVec4(78 / 255.f, 211 / 255.f, 78 / 255.f, 1.f);
+	Colors[ColorEnum::BUTTON_RED] = ImVec4(200 / 255.f, 50 / 255.f, 50 / 255.f, 1.f);
+	Colors[ColorEnum::BUTTON_RED_HOVERED] = ImVec4(207 / 255.f, 63 / 255.f, 63 / 255.f, 1.f);
+	Colors[ColorEnum::BUTTON_RED_ACTIVE] = ImVec4(211 / 255.f, 78 / 255.f, 78 / 255.f, 1.f);
+
 
 	return true;
 }
@@ -59,7 +100,7 @@ void CMyApp::Update()
 
 void CMyApp::Render()
 {
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	glClear(GL_COLOR_BUFFER_BIT /* | GL_DEPTH_BUFFER_BIT*/);
 
 	ImGuiIO io = ImGui::GetIO();
 
@@ -69,25 +110,19 @@ void CMyApp::Render()
 
 	ImGui::Begin("Kvalitativ osszehasonlitas", 0, window_flags); 
 
-		/*
-		ImFont* arial = io.Fonts->AddFontFromFileTTF("ARIAL.ttf", 13.0f);
-		io.Fonts->Build();
-
-		ImGui::PushFont(arial);
-		ImGui::Text("Teszt");
-		ImGui::PopFont();
-		*/
-
+		//ImGui::PushFont(arial);
+		//ImGui::PopFont();
+		
 	ImFont* imFo = ImGui::GetFont();
 	ImVec2 pos = ImGui::GetCursorScreenPos();
 
 	ImGui::NewLine();
 	imFo->Scale = 2.f;	ImGui::PushFont(imFo);
-	//RegularModify::CursorPos(io.DisplaySize.x / 2);
-	//ImGui::Text("Test");
+
+	ImGui::PushStyleColor(ImGuiCol_Text, Colors[ColorEnum::TEXT_LIGHT]);
 	RegularModify::CursorPos(std::max((int)(io.DisplaySize.x / 2 - 240),10));
-	ImGui::Text("Kepek kvalitativ osszehasonlitasa");
-	imFo->Scale = 1.f;	ImGui::PopFont();
+	ImGui::Text("Képek kvalitatív összehasonlítása");
+	imFo->Scale = 1.f;	ImGui::PopFont(); ImGui::PopStyleColor();
 	ImGui::NewLine(); ImGui::NewLine();
 
 
@@ -99,133 +134,191 @@ void CMyApp::Render()
 	}
 
 	if (currentImageEnum == SEMMIENUM || currentImageEnum == LOADENUM)	{
-		imFo->Scale = 1.5f;	ImGui::PushFont(imFo);
-		ImGui::Text("Kepek:");
-		imFo->Scale = 1.f;	ImGui::PopFont();
-		RegularModify::ShowHelpMarker("A betoltott kepek jelennek meg itt. Kattints rajuk, hogy kivalaszd oket.");
-		ImGui::NewLine();
 
-		if(imageVec.size()>0) {
 
-			ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 3.0f);
-			ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(2.0f, 1.0f));
+		ImGui::PushStyleColor(ImGuiCol_ChildBg , Colors[ColorEnum::CHILD_BG]);
+		ImGui::PushStyleColor(ImGuiCol_Text, Colors[ColorEnum::TEXT_DARK]);
+		ImGui::PushStyleColor(ImGuiCol_TextDisabled, Colors[ColorEnum::TEXT_HINT]);
+		ImGui::PushStyleColor(ImGuiCol_Border, Colors[ColorEnum::POPUP_BORDER]);
+		ImGui::PushStyleColor(ImGuiCol_PopupBg, Colors[ColorEnum::POPUP_BG]);
+		ImGui::PushStyleColor(ImGuiCol_ScrollbarBg, Colors[ColorEnum::SCROLL_BG]);
+		ImGui::PushStyleColor(ImGuiCol_ScrollbarGrab, Colors[ColorEnum::SCROLL_GRAB]);
+		ImGui::PushStyleColor(ImGuiCol_ScrollbarGrabHovered, Colors[ColorEnum::SCROLL_GRAB_HOVERED]);
+		ImGui::PushStyleColor(ImGuiCol_ScrollbarGrabActive, Colors[ColorEnum::SCROLL_GRAB_ACTIVE]);
+
+		ImGui::PushStyleVar(ImGuiStyleVar_ChildRounding, 5.0f);
+		ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 1.f);
+
+		ImGui::BeginChild("Pictures", ImVec2(0, imageVec.size()==0 ? 100 : 395), false);
+
+			imFo->Scale = 1.5f;	ImGui::PushFont(imFo);
+			ImGui::NewLine(); RegularModify::CursorPos(20); ImGui::Text("Kepek:Ð");
+			imFo->Scale = 1.f;	ImGui::PopFont();
+			RegularModify::ShowHelpMarker("A betoltott kepek jelennek meg itt. Kattints rajuk, hogy kivalaszd oket."); ImGui::NewLine();
+
+			if(imageVec.size()>0) {
+
+				ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 3.0f);
+				ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(2.0f, 1.0f));
 			
-			ImGui::BeginChild("scrolling", ImVec2(0, 320), false , ImGuiWindowFlags_HorizontalScrollbar);
-			for (int i = 0; i < imageVec.size(); i++) {
-				imageVec[i].drawImage(300, std::find(selectedImageVec.begin(),selectedImageVec.end(),i)!=selectedImageVec.end() );
-				if (ImGui::IsItemClicked() && currentImageEnum == SEMMIENUM)
-				{
-					if (std::find(selectedImageVec.begin(), selectedImageVec.end(), i) == selectedImageVec.end()) {
-						selectedImageVec.push_back(i);
-					}
-					else {
-						selectedImageVec.erase(std::remove(selectedImageVec.begin(), selectedImageVec.end(), i), selectedImageVec.end());
-					}
-				}
-				ImGui::SameLine();
+				ImGui::BeginChild("scrolling", ImVec2(0, 330), false , ImGuiWindowFlags_HorizontalScrollbar);
+					RegularModify::CursorPos(20);
+					for (int i = 0; i < imageVec.size(); i++) {
+						imageVec[i].drawImage(300, std::find(selectedImageVec.begin(),selectedImageVec.end(),i)!=selectedImageVec.end() );
+						if (ImGui::IsItemClicked() && (currentImageEnum == SEMMIENUM || currentImageEnum==LOADENUM))
+						{
+							if (std::find(selectedImageVec.begin(), selectedImageVec.end(), i) == selectedImageVec.end()) {
+								selectedImageVec.push_back(i);
+							}
+							else {
+								selectedImageVec.erase(std::remove(selectedImageVec.begin(), selectedImageVec.end(), i), selectedImageVec.end());
+							}
+						}
+						ImGui::SameLine();
 
+					}
+					RegularModify::CursorPos(ImGui::GetCursorPosX() + 20);
+				ImGui::EndChild();
+				ImGui::PopStyleVar(2);
 			}
-			ImGui::EndChild();
-
-			ImGui::PopStyleVar(2);
-		}
-		else {
-			ImGui::Text("Nincsen betoltott kep.");
-			ImGui::NewLine();
-		}
-		if (selectedImageVec.size() == 0) {
-			ImGui::NewLine(); ImGui::NewLine();
-		}
+			else {
+				RegularModify::CursorPos(20); ImGui::Text("Nincsen betoltott kep.");
+				ImGui::NewLine();
+			}
 		
+		ImGui::EndChild();
+		ImGui::PopStyleVar(2);ImGui::PopStyleColor(9);
+
+		ImGui::NewLine(); ImGui::NewLine();
 		
 	}
 
-	if(currentImageEnum == SEMMIENUM){
-		for (int i = 0; i < selectedImageVec.size(); i++) { //edit !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-			imageVec[selectedImageVec[i]].drawImage();
-			ImGui::SameLine();
-		}
+
+	if (currentImageEnum == SEMMIENUM) {
+
 		if (selectedImageVec.size() > 0) {
-			ImGui::NewLine(); ImGui::NewLine(); ImGui::NewLine(); ImGui::NewLine();
+
+			ImGui::PushStyleColor(ImGuiCol_Header, Colors[ColorEnum::HEADER]);
+			ImGui::PushStyleColor(ImGuiCol_HeaderHovered, Colors[ColorEnum::HEADER_HOVERED]);
+			ImGui::PushStyleColor(ImGuiCol_HeaderActive, Colors[ColorEnum::HEADER_ACTIVE]);
+			ImGui::PushStyleColor(ImGuiCol_Text, Colors[ColorEnum::TEXT_DARK]);
+			if (ImGui::CollapsingHeader("Kijelolt kepek teljes meretben", ImGuiTreeNodeFlags_DefaultOpen)) {
+
+				RegularModify::CursorPos(20);
+				for (int i = 0; i < selectedImageVec.size(); i++) {
+					imageVec[selectedImageVec[i]].drawImage();
+					ImGui::SameLine();
+				}
+				ImGui::NewLine(); ImGui::NewLine();
+			}
+			ImGui::PopStyleColor(4);
+			ImGui::NewLine(); ImGui::NewLine();
 		}
+	
 
-		imFo->Scale = 1.5f;	ImGui::PushFont(imFo);
-		ImGui::Text("Muveletek:");
-		imFo->Scale = 1.f;	ImGui::PopFont();
-		RegularModify::ShowHelpMarker("A kivalasztott kepekkel vegrehajthato muveletek.");
-		ImGui::NewLine();
+		ImGui::PushStyleColor(ImGuiCol_ChildBg, Colors[ColorEnum::CHILD_BG]);
+		ImGui::PushStyleColor(ImGuiCol_TextDisabled, Colors[ColorEnum::TEXT_HINT]);
+		ImGui::PushStyleColor(ImGuiCol_Border, Colors[ColorEnum::POPUP_BORDER]);
+		ImGui::PushStyleColor(ImGuiCol_PopupBg, Colors[ColorEnum::POPUP_BG]);
+		ImGui::PushStyleColor(ImGuiCol_Button, Colors[ColorEnum::BUTTON_BLUE]);
+		ImGui::PushStyleColor(ImGuiCol_ButtonHovered, Colors[ColorEnum::BUTTON_BLUE_HOVERED]);
+		ImGui::PushStyleColor(ImGuiCol_ButtonActive, Colors[ColorEnum::BUTTON_BLUE_ACTIVE]);
+		ImGui::PushStyleColor(ImGuiCol_Text,Colors[ColorEnum::TEXT_DARK]);
 
-		switch (selectedImageVec.size())
-		{
-		case 0:
-			ImGui::Columns(1, "mycolumns0selected", false);
-			imFo->Scale = 1.3f;
-			ImGui::PushFont(imFo);
+		ImGui::PushStyleVar(ImGuiStyleVar_ChildRounding, 5.0f);
+		ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 1.f);
 
-			if (ImGui::Button("Betoltes", ImVec2(150, 50))) {
-				currentImageEnum = LOADENUM;
-			}
-			ImGui::NextColumn();
-		
-			ImGui::Columns(1);
-			imFo->Scale = 1.f;
-			ImGui::PopFont();
-			break;
-		case 1:
-			ImGui::Columns(2, "mycolumns1selected", false);
-			imFo->Scale = 1.3f;
-			ImGui::PushFont(imFo);
+		ImGui::BeginChild("Operations", ImVec2(0, 140), false);
 
-			if (ImGui::Button("Nagyitas", ImVec2(150, 50))) {
-				currentImageEnum = MAGNIFYENUM;
-				im1mag = Image1Magnify(imageVec[selectedImageVec[0]]);
-			}
-			ImGui::NextColumn();
+			imFo->Scale = 1.5f;	ImGui::PushFont(imFo);
+			ImGui::NewLine(); RegularModify::CursorPos(20); ImGui::Text("Muveletek:");
+			imFo->Scale = 1.f;	ImGui::PopFont();
+			RegularModify::ShowHelpMarker("A kivalasztott kepekkel vegrehajthato muveletek.");
 
-			if (ImGui::Button("Mentes", ImVec2(150, 50))) {
-				currentImageEnum = SAVEENUM;
-			}
-			ImGui::NextColumn();
+			ImGui::PopStyleColor();
+			ImGui::PushStyleColor(ImGuiCol_Text, Colors[ColorEnum::TEXT_LIGHT]);
 
-			ImGui::Columns(1);
-			imFo->Scale = 1.f;
-			ImGui::PopFont();
-			break;
-		case 2:
-			if (imageVec[selectedImageVec[0]].getSurface()->w == imageVec[selectedImageVec[1]].getSurface()->w && imageVec[selectedImageVec[0]].getSurface()->h == imageVec[selectedImageVec[1]].getSurface()->h) {
-				ImGui::Columns(2, "mycolumns2selected", false);
+			ImGui::NewLine(); 
+			switch (selectedImageVec.size())
+			{
+			case 0:
+				ImGui::Columns(1, "mycolumns0selected", false);
 				imFo->Scale = 1.3f;
 				ImGui::PushFont(imFo);
 
-				if (ImGui::Button("SSIM", ImVec2(150, 50))) {
-					currentImageEnum = SSIMENUM;
-					im2ssim = Image2SSIM(imageVec[selectedImageVec[0]], imageVec[selectedImageVec[1]]);
-					im2ssim.SSIMSurface();
+				RegularModify::CursorPos(20);
+				if (ImGui::Button("Betoltes", ImVec2(150, 50))) {
+					currentImageEnum = LOADENUM;
+				}
+				ImGui::NextColumn();
+		
+				ImGui::Columns(1);
+				imFo->Scale = 1.f;
+				ImGui::PopFont();
+				break;
+			case 1:
+				ImGui::Columns(2, "mycolumns1selected", false);
+				imFo->Scale = 1.3f;
+				ImGui::PushFont(imFo);
+
+				RegularModify::CursorPos(20);
+				if (ImGui::Button("Nagyitas", ImVec2(150, 50))) {
+					currentImageEnum = MAGNIFYENUM;
+					im1mag = Image1Magnify(imageVec[selectedImageVec[0]]);
 				}
 				ImGui::NextColumn();
 
-				if (ImGui::Button("Merge", ImVec2(150, 50))) {
-					currentImageEnum = MERGEENUM;
-					im2merge = Image2Merge(imageVec[selectedImageVec[0]], imageVec[selectedImageVec[1]]);
+				if (ImGui::Button("Mentes", ImVec2(150, 50))) {
+					currentImageEnum = SAVEENUM;
 				}
 				ImGui::NextColumn();
 
 				ImGui::Columns(1);
 				imFo->Scale = 1.f;
 				ImGui::PopFont();
-			}
-			else {
+
+				ImGui::SetScrollY(0.0f);  //fix
+				break;
+			case 2:
+				if (imageVec[selectedImageVec[0]].getSurface()->w == imageVec[selectedImageVec[1]].getSurface()->w && imageVec[selectedImageVec[0]].getSurface()->h == imageVec[selectedImageVec[1]].getSurface()->h) {
+					ImGui::Columns(2, "mycolumns2selected", false);
+					imFo->Scale = 1.3f;
+					ImGui::PushFont(imFo);
+
+					RegularModify::CursorPos(20);
+					if (ImGui::Button("SSIM", ImVec2(150, 50))) {
+						currentImageEnum = SSIMENUM;
+						im2ssim = Image2SSIM(imageVec[selectedImageVec[0]], imageVec[selectedImageVec[1]]);
+						im2ssim.SSIMSurface();
+					}
+					ImGui::NextColumn();
+
+					if (ImGui::Button("Merge", ImVec2(150, 50))) {
+						currentImageEnum = MERGEENUM;
+						im2merge = Image2Merge(imageVec[selectedImageVec[0]], imageVec[selectedImageVec[1]]);
+					}
+					ImGui::NextColumn();
+
+					ImGui::Columns(1);
+					imFo->Scale = 1.f;
+					ImGui::PopFont();
+				}
+				else {
+					RegularModify::CursorPos(20);
+					ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(255, 0, 0, 255));
+					ImGui::Text("Nincsen muvelet kulonbozo meretu kepekre");
+					ImGui::PopStyleColor();
+				}
+				break;
+			default:
+				RegularModify::CursorPos(20);
 				ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(255, 0, 0, 255));
-				ImGui::Text("Nincsen muvelet kulonbozo meretu kepekre");
+				ImGui::Text("Nincsen muvelet ennyi darab kepre");
 				ImGui::PopStyleColor();
+				break;
 			}
-			break;
-		default:
-			ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(255, 0, 0, 255));
-			ImGui::Text("Nincsen muvelet ennyi darab kepre");
-			ImGui::PopStyleColor();
-			break;
-		}
+		ImGui::EndChild();
+		ImGui::PopStyleVar(2); ImGui::PopStyleColor(8);
 	}
 
 	switch (currentImageEnum)
@@ -233,54 +326,86 @@ void CMyApp::Render()
 
 	case CMyApp::LOADENUM:
 
-		imFo->Scale = 1.5f;	ImGui::PushFont(imFo);
-		ImGui::Text("Kep betoltese");
-		imFo->Scale = 1.f;	ImGui::PopFont();
-		ImGui::NewLine();
-		ImGui::Text("A betoltendo kep eleresi utvonala:");
-		ImGui::PushItemWidth(300);
-		ImGui::InputText("##StrAdd", stradd, IM_ARRAYSIZE(stradd));
-		ImGui::PopItemWidth();
+		ImGui::PushStyleColor(ImGuiCol_ChildBg, Colors[ColorEnum::CHILD_BG]);
+		ImGui::PushStyleColor(ImGuiCol_Text, Colors[ColorEnum::TEXT_DARK]);
+		ImGui::PushStyleColor(ImGuiCol_TextDisabled, Colors[ColorEnum::TEXT_HINT]);
+		ImGui::PushStyleColor(ImGuiCol_Border, Colors[ColorEnum::POPUP_BORDER]);
+		ImGui::PushStyleColor(ImGuiCol_PopupBg, Colors[ColorEnum::POPUP_BG]);
+		ImGui::PushStyleColor(ImGuiCol_FrameBg, Colors[ColorEnum::INPUT_BG]);
 
-		if (currentErrors[0]) {
-			ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(255, 0, 0, 255));
-			ImGui::Text("Hibas eleresi utvonal");
-			ImGui::PopStyleColor();
-		}
-		else ImGui::NewLine();
+		ImGui::PushStyleVar(ImGuiStyleVar_ChildRounding, 5.0f);
+		ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 1.f);
 
-		ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.7f, 1.0f, 0.7f, 0.3f));
-		ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.7f, 1.0f, 0.7f, 0.45f));
-		ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.7f, 1.0f, 0.7f, 0.5f));
+		ImGui::BeginChild("Load", ImVec2(0, 180), false);
 
-		imFo->Scale = 1.3f;
-		ImGui::PushFont(imFo);
-		if (ImGui::Button("Betoltes##stradd", ImVec2(150, 50))) {
-			if (RegularModify::Verify(stradd, straddverified)) {
-				Image0FromFile imadd;
-				imadd.Load(straddverified);
-				imadd.textureFromSurface();
-				imageVec.push_back(imadd);
-				currentErrors[0] = false;
+			imFo->Scale = 1.5f;	ImGui::PushFont(imFo);
+			ImGui::NewLine(); RegularModify::CursorPos(20); ImGui::Text("Kep betoltese");
+			imFo->Scale = 1.f;	ImGui::PopFont();
+			ImGui::NewLine();
+			RegularModify::CursorPos(20); ImGui::Text("A betoltendo kep eleresi utvonala:");
+			ImGui::PushItemWidth(320);
+			RegularModify::CursorPos(20); ImGui::InputText("##StrAdd", stradd, IM_ARRAYSIZE(stradd));
+			ImGui::PopItemWidth();
+
+			if (currentErrors[0]) {
+				ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(255, 0, 0, 255));
+				RegularModify::CursorPos(20); ImGui::Text("Hibas eleresi utvonal");
+				ImGui::PopStyleColor();
 			}
-			else {
-				currentErrors[0] = true;
-			}
-		}
-		imFo->Scale = 1.f;
-		ImGui::PopFont();
+			else ImGui::NewLine();
 
-		ImGui::PopStyleColor(3);
+			ImGui::PushStyleColor(ImGuiCol_Button, Colors[ColorEnum::BUTTON_GREEN]);
+			ImGui::PushStyleColor(ImGuiCol_ButtonHovered, Colors[ColorEnum::BUTTON_GREEN_HOVERED]);
+			ImGui::PushStyleColor(ImGuiCol_ButtonActive, Colors[ColorEnum::BUTTON_GREEN_ACTIVE]);
+
+			imFo->Scale = 1.3f;
+			ImGui::PushFont(imFo); RegularModify::CursorPos(20);
+			if (ImGui::Button("Betoltes##stradd", ImVec2(150, 50))) {
+				if (RegularModify::Verify(stradd, straddverified)) {
+					Image0FromFile imadd;
+					imadd.Load(straddverified);
+					imadd.textureFromSurface();
+					imageVec.push_back(imadd);
+					currentErrors[0] = false;
+				}
+				else {
+					currentErrors[0] = true;
+				}
+			}
+
+			ImGui::PopStyleColor(3);
+
+			ImGui::SameLine(); RegularModify::CursorPos(190);
+			Back();
+
+			imFo->Scale = 1.f;
+			ImGui::PopFont();
+
+			ImGui::EndChild();
+		ImGui::PopStyleVar(2);
+		ImGui::PopStyleColor(6);
 
 		break;
 
 	case CMyApp::MAGNIFYENUM:
 
+		ImGui::PushStyleColor(ImGuiCol_Text, Colors[ColorEnum::TEXT_DARK]);
+		ImGui::PushStyleColor(ImGuiCol_ChildBg, Colors[ColorEnum::CHILD_BG]);
+		ImGui::PushStyleColor(ImGuiCol_PopupBg, Colors[ColorEnum::POPUP_BG]);
+		ImGui::PushStyleColor(ImGuiCol_TextDisabled, Colors[ColorEnum::TEXT_HINT]);
+		ImGui::PushStyleColor(ImGuiCol_Border, Colors[ColorEnum::POPUP_BORDER]);
+		ImGui::PushStyleColor(ImGuiCol_FrameBg, Colors[ColorEnum::INPUT_BG]);
+
+		ImGui::PushStyleVar(ImGuiStyleVar_ChildRounding, 5.0f);
+		ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 1.f);
+
 		im1mag.editableDrawImage();
 
-		ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.7f, 1.0f, 0.7f, 0.3f));
-		ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.7f, 1.0f, 0.7f, 0.45f));
-		ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.7f, 1.0f, 0.7f, 0.5f));
+		ImGui::PopStyleColor(5); ImGui::PopStyleVar(2);
+
+		ImGui::PushStyleColor(ImGuiCol_Button, Colors[ColorEnum::BUTTON_GREEN]);
+		ImGui::PushStyleColor(ImGuiCol_ButtonHovered, Colors[ColorEnum::BUTTON_GREEN_HOVERED]);
+		ImGui::PushStyleColor(ImGuiCol_ButtonActive, Colors[ColorEnum::BUTTON_GREEN_ACTIVE]);
 
 		imFo->Scale = 1.3f;
 		ImGui::PushFont(imFo);
@@ -289,37 +414,66 @@ void CMyApp::Render()
 
 			ImGui::OpenPopup("Betoltes##Pop");
 		}
+
+		ImGui::PopStyleColor(3);
+
+		ImGui::SameLine(); RegularModify::CursorPos(std::max(170, imageVec[selectedImageVec[0]].getSurface()->w - 150));
+		Back();
+		ImGui::PopStyleColor(1);
+
 		imFo->Scale = 1.f;
 		ImGui::PopFont();
 
-		ImGui::PopStyleColor(3);
 
 		break;
 
 	case CMyApp::SAVEENUM:
 
-		imFo->Scale = 1.5f;	ImGui::PushFont(imFo);
-		ImGui::Text("Kep mentese");
-		imFo->Scale = 1.f;	ImGui::PopFont();
+		ImGui::PushStyleColor(ImGuiCol_ChildBg, Colors[ColorEnum::CHILD_BG]);
+		ImGui::PushStyleColor(ImGuiCol_Text, Colors[ColorEnum::TEXT_DARK]);
+		ImGui::PushStyleVar(ImGuiStyleVar_ChildRounding, 5.0f);
+		ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 1.f);
+
+		ImGui::BeginChild("Name2", ImVec2(std::max(imageVec[selectedImageVec[0]].getSurface()->w, 300), 65), false);
+
+			imFo->Scale = 1.5f;	ImGui::PushFont(imFo);
+			ImGui::NewLine(); RegularModify::CursorPos(20); ImGui::Text("Kep mentese");
+			imFo->Scale = 1.f;	ImGui::PopFont();
+
+			ImGui::EndChild();
+		ImGui::PopStyleColor(2); ImGui::PopStyleVar(2);
 		ImGui::NewLine();
 
 		ImGui::Image((void*)(intptr_t)imageVec[selectedImageVec[0]].getTexture(), ImVec2(imageVec[selectedImageVec[0]].getSurface()->w, imageVec[selectedImageVec[0]].getSurface()->h));
 		ImGui::NewLine();
 
-		ImGui::Text("A kep mentesi utvonala:");
-		ImGui::PushItemWidth(std::max(imageVec[selectedImageVec[0]].getSurface()->w, 300));
-		ImGui::InputText("##SavePath", outstr, IM_ARRAYSIZE(outstr));
-		ImGui::PopItemWidth();
-		if (currentErrors[1]) {
-			ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(255, 0, 0, 255));
-			ImGui::Text("Hibas mentesi utvonal");
-			ImGui::PopStyleColor();
-		}
+		ImGui::PushStyleColor(ImGuiCol_Text, Colors[ColorEnum::TEXT_DARK]);
+		ImGui::PushStyleColor(ImGuiCol_ChildBg, Colors[ColorEnum::CHILD_BG]);
+		ImGui::PushStyleColor(ImGuiCol_FrameBg, Colors[ColorEnum::INPUT_BG]);
+		ImGui::PushStyleVar(ImGuiStyleVar_ChildRounding, 5.0f);
+		ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 1.f);
+
+		ImGui::BeginChild("Save", ImVec2(std::max(imageVec[selectedImageVec[0]].getSurface()->w, 300), 75), false);
+
+			ImGui::NewLine();
+			RegularModify::CursorPos(20); ImGui::Text("A kep mentesi utvonala:");
+			ImGui::PushItemWidth(std::max(imageVec[selectedImageVec[0]].getSurface()->w -40, 260));
+			RegularModify::CursorPos(20); ImGui::InputText("##SavePath", outstr, IM_ARRAYSIZE(outstr));
+			ImGui::PopItemWidth();
+			if (currentErrors[1]) {
+				ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(255, 0, 0, 255));
+				RegularModify::CursorPos(20); ImGui::Text("Hibas mentesi utvonal");
+				ImGui::PopStyleColor();
+			}
+
+			ImGui::EndChild();
+		ImGui::PopStyleColor(2); ImGui::PopStyleVar(2);
+
 		ImGui::NewLine();
 
-		ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.7f, 1.0f, 0.7f, 0.3f));
-		ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.7f, 1.0f, 0.7f, 0.45f));
-		ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.7f, 1.0f, 0.7f, 0.5f));
+		ImGui::PushStyleColor(ImGuiCol_Button, Colors[ColorEnum::BUTTON_GREEN]);
+		ImGui::PushStyleColor(ImGuiCol_ButtonHovered, Colors[ColorEnum::BUTTON_GREEN_HOVERED]);
+		ImGui::PushStyleColor(ImGuiCol_ButtonActive, Colors[ColorEnum::BUTTON_GREEN_ACTIVE]);
 
 		imFo->Scale = 1.3f;
 		ImGui::PushFont(imFo);
@@ -337,19 +491,34 @@ void CMyApp::Render()
 			}
 		}
 		imFo->Scale = 1.f;
-		ImGui::PopFont();
+		ImGui::PopFont(); ImGui::PopStyleColor(3);
 
-		ImGui::PopStyleColor(3);
+		ImGui::SameLine(); RegularModify::CursorPos(std::max(170, imageVec[selectedImageVec[0]].getSurface()->w - 150));
+		Back();
+
+		ImGui::PopStyleColor(1);
 
 		break;
 
 	case CMyApp::SSIMENUM:
 
+		ImGui::PushStyleColor(ImGuiCol_Text, Colors[ColorEnum::TEXT_DARK]);
+		ImGui::PushStyleColor(ImGuiCol_ChildBg, Colors[ColorEnum::CHILD_BG]);
+		ImGui::PushStyleColor(ImGuiCol_PopupBg, Colors[ColorEnum::POPUP_BG]);
+		ImGui::PushStyleColor(ImGuiCol_TextDisabled, Colors[ColorEnum::TEXT_HINT]);
+		ImGui::PushStyleColor(ImGuiCol_Border, Colors[ColorEnum::POPUP_BORDER]);
+		ImGui::PushStyleColor(ImGuiCol_FrameBg, Colors[ColorEnum::INPUT_BG]);
+
+		ImGui::PushStyleVar(ImGuiStyleVar_ChildRounding, 5.0f);
+		ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 1.f);
+
 		im2ssim.editableDrawImage();
 
-		ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.7f, 1.0f, 0.7f, 0.3f));
-		ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.7f, 1.0f, 0.7f, 0.45f));
-		ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.7f, 1.0f, 0.7f, 0.5f));
+		ImGui::PopStyleVar(2);
+
+		ImGui::PushStyleColor(ImGuiCol_Button, Colors[ColorEnum::BUTTON_GREEN]);
+		ImGui::PushStyleColor(ImGuiCol_ButtonHovered, Colors[ColorEnum::BUTTON_GREEN_HOVERED]);
+		ImGui::PushStyleColor(ImGuiCol_ButtonActive, Colors[ColorEnum::BUTTON_GREEN_ACTIVE]);
 
 		imFo->Scale = 1.3f;
 		ImGui::PushFont(imFo);
@@ -358,20 +527,42 @@ void CMyApp::Render()
 
 			ImGui::OpenPopup("Betoltes##Pop");
 		}
+
+		ImGui::SameLine(); RegularModify::CursorPos(std::max(170, imageVec[selectedImageVec[0]].getSurface()->w - 150));
+		Back();
+		ImGui::PopStyleColor(9);
+
+
 		imFo->Scale = 1.f;
 		ImGui::PopFont();
 
-		ImGui::PopStyleColor(3);
 
 		break;
 
 	case CMyApp::MERGEENUM:
 
+		ImGui::PushStyleColor(ImGuiCol_Text, Colors[ColorEnum::TEXT_DARK]);
+		ImGui::PushStyleColor(ImGuiCol_ChildBg, Colors[ColorEnum::CHILD_BG]);
+		ImGui::PushStyleVar(ImGuiStyleVar_ChildRounding, 5.0f);
+		ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 1.f);
+
+		ImGui::BeginChild("Name2", ImVec2(std::max(imageVec[selectedImageVec[0]].getSurface()->w, 300), 65), false);
+
+		imFo->Scale = 1.5f;	ImGui::PushFont(imFo);
+		ImGui::NewLine(); RegularModify::CursorPos(20); ImGui::Text("Kep mentese");
+		imFo->Scale = 1.f;	ImGui::PopFont();
+
+		ImGui::EndChild();
+
+		ImGui::NewLine();
 		im2merge.editableDrawImage();
 
-		ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.7f, 1.0f, 0.7f, 0.3f));
-		ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.7f, 1.0f, 0.7f, 0.45f));
-		ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.7f, 1.0f, 0.7f, 0.5f));
+		ImGui::PopStyleVar(2);
+
+
+		ImGui::PushStyleColor(ImGuiCol_Button, Colors[ColorEnum::BUTTON_GREEN]);
+		ImGui::PushStyleColor(ImGuiCol_ButtonHovered, Colors[ColorEnum::BUTTON_GREEN_HOVERED]);
+		ImGui::PushStyleColor(ImGuiCol_ButtonActive, Colors[ColorEnum::BUTTON_GREEN_ACTIVE]);
 
 		imFo->Scale = 1.3f;
 		ImGui::PushFont(imFo);
@@ -380,10 +571,15 @@ void CMyApp::Render()
 
 			ImGui::OpenPopup("Betoltes##Pop");
 		}
+
+		ImGui::SameLine(); RegularModify::CursorPos(std::max(170, imageVec[selectedImageVec[0]].getSurface()->w - 150));
+		Back();
+
+		ImGui::PopStyleColor(5);
+
 		imFo->Scale = 1.f;
 		ImGui::PopFont();
 
-		ImGui::PopStyleColor(3);
 		
 		break;
 
@@ -394,24 +590,14 @@ void CMyApp::Render()
 
 	if (currentImageEnum != SEMMIENUM) {
 
-		ImGui::SameLine();
+		
 		if (currentImageEnum != LOADENUM) {
 			RegularModify::CursorPos(std::max(170, imageVec[selectedImageVec[0]].getSurface()->w-150));
 		}
 		else {
-			RegularModify::CursorPos(170);
+			//a
 		}
-		imFo->Scale = 1.3f;
-		ImGui::PushFont(imFo);
-		ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(1.0f, 0.8f, 0.8f, 0.3f));
-		ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(1.0f, 0.8f, 0.8f, 0.45f));
-		ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(1.0f, 0.8f, 0.8f, 0.5f));
-		if (ImGui::Button("Vissza", ImVec2(150, 50))) {
-			currentImageEnum = SEMMIENUM;
-		}
-		ImGui::PopStyleColor(3);
-		imFo->Scale = 1.f;
-		ImGui::PopFont();
+		
 	}
 
 	ImGui::NewLine();
@@ -434,7 +620,25 @@ void CMyApp::Render()
 		ImGui::EndPopup();
 	}
 
+	//ImGui::PopFont();
 	ImGui::End();
+}
+
+void CMyApp::Back() {
+	ImFont* imFo = ImGui::GetFont();
+	imFo->Scale = 1.3f;
+	ImGui::PushFont(imFo);
+	ImGui::PushStyleColor(ImGuiCol_Button, Colors[ColorEnum::BUTTON_RED]);
+	ImGui::PushStyleColor(ImGuiCol_ButtonHovered, Colors[ColorEnum::BUTTON_RED_HOVERED]);
+	ImGui::PushStyleColor(ImGuiCol_ButtonActive, Colors[ColorEnum::BUTTON_RED_ACTIVE]);
+	if (ImGui::Button("Vissza", ImVec2(150, 50))) {
+		currentImageEnum = SEMMIENUM;
+		currentErrors[0] = false;
+		currentErrors[1] = false;
+	}
+	ImGui::PopStyleColor(3);
+	imFo->Scale = 1.f;
+	ImGui::PopFont();
 }
 
 void CMyApp::Resize(int _w, int _h) //??????????????????????????????????????????????????
@@ -526,9 +730,14 @@ void Image1Magnify::editableDrawImage() {
 	ImGuiIO& io = ImGui::GetIO();
 	ImVec2 pos = ImGui::GetCursorScreenPos();
 
-	imFo->Scale = 1.5f;	ImGui::PushFont(imFo);
-	ImGui::Text("Kep nagyitasa");
-	imFo->Scale = 1.f;	ImGui::PopFont();
+	ImGui::BeginChild("Name1", ImVec2(std::max(surface->w, 300), 65), false);
+
+		imFo->Scale = 1.5f;	ImGui::PushFont(imFo);
+		ImGui::NewLine();
+		RegularModify::CursorPos(20); ImGui::Text("Kep nagyitasa");
+		imFo->Scale = 1.f;	ImGui::PopFont();
+
+	ImGui::EndChild();
 	ImGui::NewLine();
 
 	ImGui::Image((void*)(intptr_t)texture, ImVec2(surface->w, surface->h));
@@ -579,76 +788,80 @@ void Image1Magnify::editableDrawImage() {
 
 	ImGui::NewLine();
 
-	imFo->Scale = 1.3f;
-	ImGui::PushFont(imFo);
-	RegularModify::CursorPos(1 * fmax(surface->w, 300) / 4 - 70);
+	ImGui::BeginChild("Magnify", ImVec2(std::max(surface->w, 300), 180), false);
 
-	if (smallChange) {
-		ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.f, 1.f, 0.2f, 0.4f));
-		ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.f, 1.f, 0.2f, 0.6f));
-		ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.f, 1.f, 0.2f, 0.7f));
-	}
-	else {
-		ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.5f, 0.5f, 0.5f, 0.4f));
-		ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.5f, 0.5f, 0.5f, 0.6f));
-		ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.5f, 0.5f, 0.5f, 0.75f));
-	}
-	if (ImGui::Button("KisTeglalap", ImVec2(140, 40))) {
-		smallChange = true;
-	}
-	ImGui::PopStyleColor(3);
-	imFo->Scale = 1.f;
-	ImGui::PopFont();
-	RegularModify::ShowHelpMarker("Ezt kivalasztva a nagyitando terulet helyet tudod majd mozgatni.");
+		imFo->Scale = 1.3f;
+		ImGui::PushFont(imFo);
+		ImGui::NewLine(); RegularModify::CursorPos(1 * fmax(surface->w, 300) / 4 - 70);
+
+		if (smallChange) {
+			ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.f, 1.f, 0.2f, 0.4f));
+			ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.f, 1.f, 0.2f, 0.6f));
+			ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.f, 1.f, 0.2f, 0.7f));
+		}
+		else {
+			ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.5f, 0.5f, 0.5f, 0.4f));
+			ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.5f, 0.5f, 0.5f, 0.6f));
+			ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.5f, 0.5f, 0.5f, 0.75f));
+		}
+		if (ImGui::Button("KisTeglalap", ImVec2(140, 40))) {
+			smallChange = true;
+		}
+		ImGui::PopStyleColor(3);
+		imFo->Scale = 1.f;
+		ImGui::PopFont();
+		RegularModify::ShowHelpMarker("Ezt kivalasztva a nagyitando terulet helyet tudod majd mozgatni.");
 	
-	ImGui::SameLine();
-	imFo->Scale = 1.3f;
-	ImGui::PushFont(imFo);
-	RegularModify::CursorPos(3 * fmax(surface->w, 300) / 4 - 70);
-	if (!smallChange) {
-		ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.f, 1.f, 0.2f, 0.4f));
-		ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.f, 1.f, 0.2f, 0.6f));
-		ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.f, 1.f, 0.2f, 0.7f));
-	}
-	else {
-		ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.5f, 0.5f, 0.5f, 0.4f));
-		ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.5f, 0.5f, 0.5f, 0.6f));
-		ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.5f, 0.5f, 0.5f, 0.75f));
-	}
-	if (ImGui::Button("NagyTeglalap", ImVec2(140, 40))) {
-		smallChange = false;
-	}
-	ImGui::PopStyleColor(3);
-	imFo->Scale = 1.f;
-	ImGui::PopFont();
+		ImGui::SameLine();
+		imFo->Scale = 1.3f;
+		ImGui::PushFont(imFo);
+		RegularModify::CursorPos(3 * fmax(surface->w, 300) / 4 - 70);
+		if (!smallChange) {
+			ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.f, 1.f, 0.2f, 0.4f));
+			ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.f, 1.f, 0.2f, 0.6f));
+			ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.f, 1.f, 0.2f, 0.7f));
+		}
+		else {
+			ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.5f, 0.5f, 0.5f, 0.4f));
+			ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.5f, 0.5f, 0.5f, 0.6f));
+			ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.5f, 0.5f, 0.5f, 0.75f));
+		}
+		if (ImGui::Button("NagyTeglalap", ImVec2(140, 40))) {
+			smallChange = false;
+		}
+		ImGui::PopStyleColor(3);
+		imFo->Scale = 1.f;
+		ImGui::PopFont();
 
-	RegularModify::ShowHelpMarker("Ezt kivalasztva a felnagyitott terulet kivetitesenek a helyet tudod majd mozgatni.");
+		RegularModify::ShowHelpMarker("Ezt kivalasztva a felnagyitott terulet kivetitesenek a helyet tudod majd mozgatni.");
 
 
-	ImGui::NewLine();
+		ImGui::NewLine();
 
-	ImGui::Text("Nagyitando terulet szelessege:"); //still errors
-	ImGui::SameLine();
-	RegularModify::CursorPos(230);
-	ImGui::PushItemWidth(fmax(surface->w, 300) - 230);
-	ImGui::InputInt("##ZoomWidth", &zoomW, 0);
-	ImGui::PopItemWidth();
-	if (zoomW < 1) { zoomW = 1; }
-	if (zoomW > fmin(surface->w / zoomTimes - 1,surface->w - 1)) { zoomW = fmin(surface->w / zoomTimes - 1, surface->w - 1); } //bigX = im1.getSurface()->w - zoomW * zoomTimes;
-	ImGui::Text("Nagyitando terulet magassaga:");
-	ImGui::SameLine();
-	RegularModify::CursorPos(230);
-	ImGui::PushItemWidth(fmax(surface->w, 300) - 230);
-	ImGui::InputInt("##ZoomHeight", &zoomH, 0);
-	ImGui::PopItemWidth();
+		RegularModify::CursorPos(20); ImGui::Text("Nagyitando terulet szelessege:"); //still errors
+		ImGui::SameLine();
+		RegularModify::CursorPos(270);
+		ImGui::PushItemWidth(fmax(surface->w, 300) - 290);
+		ImGui::InputInt("##ZoomWidth", &zoomW, 0);
+		ImGui::PopItemWidth();
+		if (zoomW < 1) { zoomW = 1; }
+		if (zoomW > fmin(surface->w / zoomTimes - 1,surface->w - 1)) { zoomW = fmin(surface->w / zoomTimes - 1, surface->w - 1); } //bigX = im1.getSurface()->w - zoomW * zoomTimes;
+		RegularModify::CursorPos(20); ImGui::Text("Nagyitando terulet magassaga:");
+		ImGui::SameLine();
+		RegularModify::CursorPos(270);
+		ImGui::PushItemWidth(fmax(surface->w, 300) - 290);
+		ImGui::InputInt("##ZoomHeight", &zoomH, 0);
+		ImGui::PopItemWidth();
 
-	ImGui::Text("Nagyitas merteke:");
-	ImGui::SameLine();
-	RegularModify::CursorPos(150);
-	ImGui::PushItemWidth(fmax(surface->w, 300) - 150);
-	ImGui::SliderFloat("##ZoomTimes", &zoomTimes, 0.1f, 10.0f, "%.4f");
-	ImGui::PopItemWidth();
+		RegularModify::CursorPos(20); ImGui::Text("Nagyitas merteke:");
+		ImGui::SameLine();
+		RegularModify::CursorPos(190);
+		ImGui::PushItemWidth(fmax(surface->w, 300) - 210);
+		ImGui::SliderFloat("##ZoomTimes", &zoomTimes, 0.1f, 10.0f, "%.4f");
+		ImGui::PopItemWidth();
 
+
+	ImGui::EndChild();
 	ImGui::NewLine();
 }
 
@@ -771,51 +984,64 @@ void Image2SSIM::editableDrawImage() {
 	ImGuiIO& io = ImGui::GetIO();
 	ImVec2 pos = ImGui::GetCursorScreenPos();
 
-	imFo->Scale = 1.5f;	ImGui::PushFont(imFo);
-	ImGui::Text("Ket kep SSIM-e");
-	imFo->Scale = 1.f;	ImGui::PopFont();
+	ImGui::BeginChild("Name3", ImVec2(std::max(surface->w, 300), 65), false);
+
+		imFo->Scale = 1.5f;	ImGui::PushFont(imFo);
+		ImGui::NewLine();
+		RegularModify::CursorPos(20); ImGui::Text("Ket kep SSIM-e");
+		imFo->Scale = 1.f;	ImGui::PopFont();
+
+	ImGui::EndChild();
 	ImGui::NewLine();
 
 	ImGui::Image((void*)(intptr_t)texture, ImVec2(surface->w, surface->h));
 	ImGui::NewLine();
 
-	ImGui::Text("Osszesitett SSIM ertek: %f", ssimOsszeg);
-	RegularModify::ShowHelpMarker("A kepeken vegrehajtott SSIM algoritmusok eredmenyenek az atlaga.");
+	ImGui::BeginChild("SSIM", ImVec2(std::max(surface->w, 300), 210), false);
 
-	ImGui::Text("Az SSIM szine: "); ImGui::SameLine();
-	ImGui::RadioButton("Fekete-Feher", &ssimColor, 0); ImGui::SameLine();
-	ImGui::RadioButton("Kek", &ssimColor, 1); ImGui::SameLine();
-	ImGui::RadioButton("Zold", &ssimColor, 2);  ImGui::SameLine();
-	ImGui::RadioButton("Piros", &ssimColor, 3);  ImGui::SameLine();
-	ImGui::RadioButton("Osszes szin", &ssimColor, 4);	ImGui::SameLine();
-	ImGui::RadioButton("Heatmap", &ssimColor, 5);
-	RegularModify::ShowHelpMarker("Itt tudod kivalasztani az SSIM kep szinet/stilusat.");
+		ImGui::NewLine();
+		RegularModify::CursorPos(20); ImGui::Text("Osszesitett SSIM ertek: %f", ssimOsszeg);
+		RegularModify::ShowHelpMarker("A kepeken vegrehajtott SSIM algoritmusok eredmenyenek az atlaga.");
 
-	ImGui::Text("Az SSIM szeletek merete:");
-	ImGui::SameLine();
-	RegularModify::CursorPos(200);
-	ImGui::PushItemWidth(100);
-	ImGui::InputInt("##Size", &ssimSize, 0);
-	RegularModify::ShowHelpMarker("Az SSIM algoritmus hanyszor hanyas szeletekben szamoljon.");
+		ImGui::NewLine();
+		RegularModify::CursorPos(20); ImGui::Text("Az SSIM szine: ");
+		RegularModify::CursorPos(20);
+		ImGui::RadioButton("Fekete-Feher", &ssimColor, 0); ImGui::SameLine();
+		ImGui::RadioButton("Kek", &ssimColor, 1); ImGui::SameLine();
+		ImGui::RadioButton("Zold", &ssimColor, 2);  ImGui::SameLine();
+		ImGui::RadioButton("Piros", &ssimColor, 3);  ImGui::SameLine();
+		ImGui::RadioButton("Osszes szin", &ssimColor, 4);	ImGui::SameLine();
+		ImGui::RadioButton("Heatmap", &ssimColor, 5);
+		RegularModify::ShowHelpMarker("Itt tudod kivalasztani az SSIM kep szinet/stilusat.");
 
-	ImGui::NewLine();
-	ImGui::PopItemWidth();
-	if (ssimSize < 1) { //lookinto
-		ssimSize = 1;
-	}
-	if (ssimSize > fmin(surface->w / 2, surface->h / 2)) {
-		ssimSize = fmin(surface->w / 2, surface->h / 2);
-	}
+		ImGui::NewLine();
+		RegularModify::CursorPos(20); ImGui::Text("Az SSIM szeletek merete:");
+		ImGui::SameLine();
+		RegularModify::CursorPos(220);
+		ImGui::PushItemWidth(80);
+		ImGui::InputInt("##Size", &ssimSize, 0);
+		RegularModify::ShowHelpMarker("Az SSIM algoritmus hanyszor hanyas szeletekben szamoljon.");
 
-	RegularModify::CursorPos((surface->w / 2) - (150/2) );
-	imFo->Scale = 1.3f;
-	ImGui::PushFont(imFo);
-	if (ImGui::Button("Ujrageneralas", ImVec2(150, 50))) {
+		ImGui::NewLine();
+		ImGui::PopItemWidth();
+		if (ssimSize < 1) { //lookinto
+			ssimSize = 1;
+		}
+		if (ssimSize > fmin(surface->w / 2, surface->h / 2)) {
+			ssimSize = fmin(surface->w / 2, surface->h / 2);
+		}
 
-		SSIMSurface();
-	}
-	imFo->Scale = 1.f;
-	ImGui::PopFont();
+		RegularModify::CursorPos((surface->w / 2) - (150/2) );
+		imFo->Scale = 1.3f;
+		ImGui::PushFont(imFo);
+		if (ImGui::Button("Ujrageneralas", ImVec2(150, 50))) {
+
+			SSIMSurface();
+		}
+		imFo->Scale = 1.f;
+		ImGui::PopFont();
+
+	ImGui::EndChild();
 	
 
 	ImGui::NewLine(); ImGui::NewLine();
@@ -1068,11 +1294,6 @@ void Image2Merge::editableDrawImage() {
 	ImGuiIO& io = ImGui::GetIO();
 	ImVec2 pos = ImGui::GetCursorScreenPos();
 
-	imFo->Scale = 1.5f;	ImGui::PushFont(imFo);
-	ImGui::Text("Ket kep osszeolvasztasa");
-	imFo->Scale = 1.f;	ImGui::PopFont();
-	ImGui::NewLine();
-
 	ImGui::Image((void*)(intptr_t)texture, ImVec2(surface->w, surface->h));
 	if (ImGui::IsItemHovered())
 	{
@@ -1089,12 +1310,17 @@ void Image2Merge::editableDrawImage() {
 	}
 	ImGui::NewLine();
 
-	ImGui::Text("Az atmenet meredeksege:");
-	ImGui::SameLine();
-	RegularModify::CursorPos(200);
-	ImGui::PushItemWidth(std::max(surface->w,300)-200 );
-	ImGui::SliderFloat("##slope", &slope, 1.0f, 10.0f, "%.4f", 3.0f);
-	ImGui::PopItemWidth();
+	ImGui::BeginChild("Merge", ImVec2(std::max(surface->w, 300), 50), false);
+
+		ImGui::NewLine();
+		RegularModify::CursorPos(20); ImGui::Text("Az atmenet meredeksege:");
+		ImGui::SameLine();
+		RegularModify::CursorPos(200);
+		ImGui::PushItemWidth(std::max(surface->w,300)-220 );
+		ImGui::SliderFloat("##slope", &slope, 1.0f, 10.0f, "%.4f", 3.0f);
+		ImGui::PopItemWidth();
+
+	ImGui::EndChild();
 	ImGui::NewLine();
 
 }
@@ -1235,13 +1461,12 @@ Uint32 RegularModify::heatmapColor(float value) {
 	if (value < 0.5f) {
 		// red (255,0,0) -> yellow (255,255,0)
 		r = 255;
-		g = static_cast<int>(255 * (value / 0.5f));  // 0-0.5  1.
+		g = static_cast<int>(255 * (value / 0.5f));
 		b = 0;
 	}
 	else {
 		// yellow (255,255,0) -> blue (0,0,255)
 		r = g = static_cast<int>(255 * (1.0f - (value / 0.5f)));
-		//g = static_cast<int>(255 * (1.0f - (value / 1.0f)));
 		b = static_cast<int>(255 * (value / 0.5f));
 	}
 

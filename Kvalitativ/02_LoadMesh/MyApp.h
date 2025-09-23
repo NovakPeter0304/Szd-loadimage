@@ -134,6 +134,7 @@ public:
 };
 
 
+
 class CMyApp
 {
 public:
@@ -152,8 +153,41 @@ public:
 
 protected:
 
+	void Back();
+
+	ImFont* arial; //delete?
+	ImFont* notosans; //delete?
 	std::vector<Image> imageVec;
 	std::vector<int> selectedImageVec;
+
+	enum ColorEnum {
+		TEXT_LIGHT,
+		TEXT_DARK,
+		TEXT_HINT,
+		CHILD_BG,
+		POPUP_BG,
+		POPUP_BORDER,
+		SCROLL_GRAB,
+		SCROLL_GRAB_HOVERED,
+		SCROLL_GRAB_ACTIVE,
+		SCROLL_BG,
+		HEADER,
+		HEADER_HOVERED,
+		HEADER_ACTIVE,
+		INPUT_BG,
+		BUTTON_BLUE,
+		BUTTON_BLUE_HOVERED,
+		BUTTON_BLUE_ACTIVE,
+		BUTTON_GREEN,
+		BUTTON_GREEN_HOVERED,
+		BUTTON_GREEN_ACTIVE,
+		BUTTON_RED,
+		BUTTON_RED_HOVERED,
+		BUTTON_RED_ACTIVE,
+
+		NumberOfTypes
+	};
+	ImVec4 Colors[ColorEnum::NumberOfTypes];
 
 	enum ImageEnum {
 		SEMMIENUM,
@@ -166,6 +200,11 @@ protected:
 		SSIMENUM,
 		MERGEENUM
 	};
+
+/*	struct Colors {
+		static const ImVec4 BACKGROUND;
+	};*/
+
 	ImageEnum currentImageEnum;
 
 	ImGuiWindowFlags window_flags;
