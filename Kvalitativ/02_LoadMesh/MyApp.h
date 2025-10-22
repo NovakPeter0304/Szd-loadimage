@@ -8,6 +8,7 @@
 #include <SDL_opengl.h>
 
 #include <imgui/imgui.h>
+#include <functional>
 
 
 class Image {
@@ -29,33 +30,65 @@ protected:
 
 };
 
-class Image0 : public Image {
+// extra
+class Folder : public Image{
+public:
+	Folder(void);
+	bool Load(char* s);
+	void Append(Image app);
+	void Append(Folder app);
+	void createIconImageFromImages();
+
+	std::vector<Image> images;
+};
+
+
+class Image0 {
 
 };
 
 class Image0FromFile : public Image0 {
 public:
-	void Load(char* s);
-};
+	Image0FromFile(void);
+	static Image Load(char* s);
+	enum loadTypeEnum { PICTURE, FOLDER };
 
-class Image1 : public Image {
-public:
-	Image1(void);
-	Image1(Image im);
+	int getLoadType() { return loadType; }
+	void setLoadType(int t) { loadType = t; }
 
 protected:
-	Image imIn;
+	int loadType;
+};
+
+class Image1 {
+public:
+	Image1(void);
+	//Image1(Image im);
+
+	void setImage(Image im); //one
+
+	Image imOut;
+protected:
 };
 
 class Image1Magnify : public Image1 {
 public:
 	Image1Magnify(void);
-	Image1Magnify(Image im);
+	//Image1Magnify(Image im);
 
-	void editableDrawImage() override;
+	int getZoomW() { return zoomW; }
+	void setZoomW(int w) { zoomW = w; }
+	int getZoomH() { return zoomH; }
+	void setZoomH(int h) { zoomH = h; }
+	float getZoomTimes() { return zoomTimes; }
+	void setZoomTimes(float t) { zoomTimes = t; }
+	bool getSmallChange() { return smallChange; }
+	void setSmallChange(bool b) { smallChange = b; }
 
+	void editableDrawImage(Image im);
+	void Reset();
+	void MagnifyMethod(Image im);
 protected:
-	void MagnifyMethod();
 
 	int zoomW;
 	int zoomH;
@@ -68,26 +101,35 @@ protected:
 	bool upd;
 };
 
-class Image2 : public Image {
+class Image2{
 public:
 	Image2(void);
-	Image2(Image im1,Image im2);
+	//Image2(Image im1,Image im2);
 
+	void setImage(Image im);
+
+	Image imOut;
 protected:
-	Image imIn1, imIn2;
 };
 
 class Image2SSIM : public Image2 {
 public:
 	Image2SSIM(void);
-	Image2SSIM(Image im1, Image im2);
+	//Image2SSIM(Image im1, Image im2);
 
-	void SSIMSurface();
-	void editableDrawImage() override;
+	void SSIMSurface(Image im1,Image im2);
+	void editableDrawImage();
+	void Reset();
+
+	int getSsimColor() { return ssimColor; }
+	void setSsimColor(int c) { ssimColor = c; }
+	int getSsimSize() { return ssimSize; }
+	void setSsimSize(int s) { ssimSize = s; }
+	float getSsimOsszeg() { return ssimOsszeg; }
 
 protected:
-	struct colorsStruckt { Uint8 grey1, grey2, red1, red2, green1, green2, blue1, blue2, alpha1, alpha2; };
-	float SSIMmethod(std::vector<std::vector<colorsStruckt>> window/*, std::vector<std::vector<colorsStruckt>> window2*/, int currCol);
+	enum colorResult { Red, Green, Blue, Alpha, Grey, NumberOfTypes};
+	std::vector<float> SSIMmethod(std::vector<std::vector<Uint32>> window1, std::vector<std::vector<Uint32>> window2, Image im1, Image im2);
 
 	int ssimColor;
 	int ssimSize;
@@ -99,14 +141,21 @@ protected:
 class Image2Merge : public Image2 {
 public:
 	Image2Merge(void);
-	Image2Merge(Image im1, Image im2);
+	//Image2Merge(Image im1, Image im2);
 
-	void plotLineMerge(int x, int y);
-	void editableDrawImage() override;
+	void plotLineMerge(int x, int y, Image im1, Image im2);
+	void editableDrawImage(Image im1, Image im2);
+	void Reset();
+
+	float getSlope() { return slope; }
+	void setSlope(float s) { slope = s; }
+	int getUx() { return ux; }
+	int getUy() { return uy; }
 
 protected:
 	float slope;
 	bool upd;
+	int ux, uy;
 };
 
 class SurfaceModify {
@@ -154,11 +203,22 @@ public:
 protected:
 
 	void Back();
+	void SetBasicUI();
+	void PushStyleColorGreenButton();
 
 	ImFont* arial; //delete?
-	ImFont* notosans; //delete?
+	//ImFont* notosans; //delete?
+	enum imageOrFolder { iofImage, iofFolder };
+	struct ImageFolder { Image im; Folder f; imageOrFolder iof = iofImage; };
+	std::vector<ImageFolder> imfVec;
+	std::vector<int> selectedImFVec;
+
+
 	std::vector<Image> imageVec;
 	std::vector<int> selectedImageVec;
+
+	std::vector<Folder> folderVec;
+	std::vector<int> selectedFolderVec;
 
 	enum ColorEnum {
 		TEXT_LIGHT,
@@ -184,9 +244,13 @@ protected:
 		BUTTON_RED,
 		BUTTON_RED_HOVERED,
 		BUTTON_RED_ACTIVE,
+		BUTTON_GREY,
+		BUTTON_GREY_HOVERED,
+		BUTTON_GREY_ACTIVE,
 
 		NumberOfTypes
 	};
+
 	ImVec4 Colors[ColorEnum::NumberOfTypes];
 
 	enum ImageEnum {
@@ -201,10 +265,6 @@ protected:
 		MERGEENUM
 	};
 
-/*	struct Colors {
-		static const ImVec4 BACKGROUND;
-	};*/
-
 	ImageEnum currentImageEnum;
 
 	ImGuiWindowFlags window_flags;
@@ -218,9 +278,9 @@ protected:
 	char straddverified[128];
 	char outstr[128];
 	
+	Image0FromFile im0load;
 	Image1Magnify im1mag;
 	Image2SSIM im2ssim;
 	Image2Merge im2merge;
+	Folder imFold;
 };
-
-
