@@ -61,6 +61,24 @@ protected:
 	int loadType;
 };
 
+class Image0StaticNoise : public Image0 {
+public:
+	Image0StaticNoise(void);
+
+	void StaticMethod();
+
+	int width;
+	int height;
+	std::vector<ImVec4> color;
+	std::vector<ImVec4> backup_color;
+	ImVec4 saved_palette[32];
+
+	Image staticnoise;
+
+	void Reset();
+protected:
+};
+
 class Image1 : public Operations {
 public:
 	Image1(void);
@@ -100,6 +118,30 @@ protected:
 	int bigY;
 	bool smallChange;
 	bool upd;
+};
+
+class Image1Blur : public Image1 {
+public:
+	Image1Blur(void);
+
+	void Reset();
+	void BlurMethod(Image im);
+
+	int blurType;
+	int blurSize;
+protected:
+};
+
+class Image1Color : public Image1 {
+public:
+	Image1Color(void);
+
+	void Reset();
+	void ColorMethod(Image im);
+
+	enum ImageColorType {Null,GreyScale,Inverted};  //+null?
+
+	int imctype;
 };
 
 enum imageOrFolder { iofImage, iofFolder };
@@ -168,8 +210,8 @@ protected:
 
 class StoredOperaionsClass {
 public:
-	enum operationTypeEnum { oteImage1Magnify, oteImage2SSIM,oteImage2Merge };
-	struct storedOperation { Image1Magnify i1m; Image2SSIM i2s; Image2Merge i2m; operationTypeEnum ote = oteImage1Magnify; std::vector<int> affectedElements; };
+	enum operationTypeEnum { oteImage1Magnify,oteImage1Blur,oteImage1Color,oteImage2SSIM,oteImage2Merge };
+	struct storedOperation { Image1Magnify i1m; Image1Blur i1b; Image1Color i1c ; Image2SSIM i2s; Image2Merge i2m; operationTypeEnum ote = oteImage1Magnify; std::vector<int> affectedElements; };
 	std::vector<storedOperation> storedOperationsElement;
 };
 
@@ -268,9 +310,12 @@ protected:
 	enum ImageEnum {
 		SEMMIENUM,
 
+		STATICNOISEENUM,
 		LOADENUM,
 		
 		MAGNIFYENUM,
+		BLURENUM,
+		COLORENUM,
 		SAVEENUM,
 
 		SSIMENUM,
@@ -281,19 +326,18 @@ protected:
 
 	ImGuiWindowFlags window_flags;
 
-	bool currentErrors[2]; 
-	/*	0 - betoltes: hibas eleresi utvonal
-	*	1 - mentes: hibas eleresi utvonal
-	*/
-
 	char stradd[128];
 	char straddverified[128];
 	char outstr[128];
 	
 	Image0FromFile im0load;
-	Image1Save im1sav;
+	Image0StaticNoise im0stat;
 	Image1Magnify im1mag;
+	Image1Blur im1blur;
+	Image1Color im1col;
+	Image1Save im1sav;
 	Image2SSIM im2ssim;
 	Image2Merge im2merge;
+
 	//Folder imFold;
 };

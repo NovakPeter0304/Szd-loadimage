@@ -2,12 +2,15 @@
 
 #define _CRT_SECURE_NO_WARNINGS
 
+#define IM_F32_TO_INT8_SAT(_VAL)        ((int)(ImSaturate(_VAL) * 255.0f + 0.5f))  
+
 #include "MyApp.h"
 #include "GLUtils.hpp"
 
 #include <math.h>
 #include <imgui/imgui.h>
 #include "stb_image.h"
+#include <random>
 
 #include <filesystem>
 
@@ -17,10 +20,6 @@
 CMyApp::CMyApp(void)
 {
 	window_flags = ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_HorizontalScrollbar;
-
-	for (int i = 0;i< sizeof(currentErrors);i++) {
-		currentErrors[i] = false;
-	}
 
 	strcpy(stradd, "C:/Users/User/Pictures/ac2.jpg");
 	strcpy(straddverified, stradd);
@@ -128,128 +127,118 @@ void CMyApp::Render()
 	imFo->Scale = 1.f;	ImGui::PopFont(); ImGui::PopStyleColor();
 	ImGui::NewLine(); ImGui::NewLine();
 
-
-	/*int maxHeightVecIndex = 0;
-	for (int i = 0; i < imageVec.size(); ++i) {
-		if (imageVec[i].getSurface()->h > imageVec[maxHeightVecIndex].getSurface()->h) {
-			maxHeightVecIndex = i;
-		}
-	}*/
-
 	SetBasicUI();
 	ImGui::PushStyleColor(ImGuiCol_ScrollbarBg, Colors[ColorEnum::SCROLL_BG]);
 	ImGui::PushStyleColor(ImGuiCol_ScrollbarGrab, Colors[ColorEnum::SCROLL_GRAB]);
 	ImGui::PushStyleColor(ImGuiCol_ScrollbarGrabHovered, Colors[ColorEnum::SCROLL_GRAB_HOVERED]);
 	ImGui::PushStyleColor(ImGuiCol_ScrollbarGrabActive, Colors[ColorEnum::SCROLL_GRAB_ACTIVE]);
 
-	ImGui::BeginChild("Pictures", ImVec2(0, imfVec.size() == 0 ? 100 : 395), false);
+	ImGui::BeginChild("Pictures", ImVec2(0, imfVec.size() == 0 ? 100 : 395), false); {
 
-	imFo->Scale = 1.5f;	ImGui::PushFont(imFo);
-	ImGui::NewLine(); RegularModify::CursorPos(20); ImGui::Text("FoldersIms: ");
-	imFo->Scale = 1.f;	ImGui::PopFont();
-	RegularModify::ShowHelpMarker("The loaded images will appear here. Click on them to select them."); ImGui::NewLine();
+		imFo->Scale = 1.5f;	ImGui::PushFont(imFo);
+		ImGui::NewLine(); RegularModify::CursorPos(20); ImGui::Text("Images: ");
+		imFo->Scale = 1.f;	ImGui::PopFont();
+		RegularModify::ShowHelpMarker("The loaded images and folders will appear here. Click on them to select them."); ImGui::NewLine();
 
-	if (imfVec.size() > 0) {
+		if (imfVec.size() > 0) {
 
-		ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 3.0f);
-		ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(2.0f, 1.0f));
+			ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 3.0f);
+			ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(2.0f, 1.0f));
 
-		ImGui::BeginChild("scrolling", ImVec2(0, 330), false, ImGuiWindowFlags_HorizontalScrollbar);
-		RegularModify::CursorPos(20);
-		for (int i = 0; i < imfVec.size(); i++) {
+			ImGui::BeginChild("scrolling", ImVec2(0, 330), false, ImGuiWindowFlags_HorizontalScrollbar); {
+				RegularModify::CursorPos(20);
+				for (int i = 0; i < imfVec.size(); i++) {
 
-			switch (imfVec[i].iof) {
-				case iofImage: {
-					imfVec[i].im.drawImage(300 , std::find(selectedImFVec.begin(), selectedImFVec.end(), i) != selectedImFVec.end());
-					break;
+					switch (imfVec[i].iof) {
+					case iofImage: {
+						imfVec[i].im.drawImage(300, std::find(selectedImFVec.begin(), selectedImFVec.end(), i) != selectedImFVec.end());
+						break;
+					}
+					case iofFolder: {
+						imfVec[i].f.drawImage(300, std::find(selectedImFVec.begin(), selectedImFVec.end(), i) != selectedImFVec.end());
+						break;
+					}
+					default: {
+						break;
+					}
+					}
+
+					if (ImGui::IsItemClicked() && (currentImageEnum == SEMMIENUM || currentImageEnum == LOADENUM))
+					{
+						if (std::find(selectedImFVec.begin(), selectedImFVec.end(), i) == selectedImFVec.end()) {
+							selectedImFVec.push_back(i);
+						}
+						else {
+							selectedImFVec.erase(std::remove(selectedImFVec.begin(), selectedImFVec.end(), i), selectedImFVec.end());
+						}
+					}
+					ImGui::SameLine();
+
 				}
-				case iofFolder: {
-					imfVec[i].f.drawImage(300 , std::find(selectedImFVec.begin(), selectedImFVec.end(), i) != selectedImFVec.end());
-					break;
-				}
-				default: {
-					break;
-				}
+				RegularModify::CursorPos(ImGui::GetCursorPosX() + 20);
 			}
+			ImGui::EndChild();
 
-			if (ImGui::IsItemClicked() && (currentImageEnum == SEMMIENUM || currentImageEnum == LOADENUM))
-			{
-				if (std::find(selectedImFVec.begin(), selectedImFVec.end(), i) == selectedImFVec.end()) {
-					selectedImFVec.push_back(i);
-				}
-				else {
-					selectedImFVec.erase(std::remove(selectedImFVec.begin(), selectedImFVec.end(), i), selectedImFVec.end());
-				}
-			}
-			ImGui::SameLine();
-
+			ImGui::PopStyleVar(2);
 		}
-		RegularModify::CursorPos(ImGui::GetCursorPosX() + 20);
-
-		ImGui::EndChild();
-
-		ImGui::PopStyleVar(2);
+		else {
+			RegularModify::CursorPos(20); ImGui::Text("No loaded image.");
+			ImGui::NewLine();
+		}
 	}
-	else {
-		RegularModify::CursorPos(20); ImGui::Text("No loaded image.");
-		ImGui::NewLine();
-	}
-
 	ImGui::EndChild();
 
-	 
-
-	ImGui::PopStyleVar(2);ImGui::PopStyleColor(9);
+	ImGui::PopStyleVar(2); ImGui::PopStyleColor(9);
 
 	ImGui::NewLine(); ImGui::NewLine();
 
 	switch (currentImageEnum)
 	{
-		case CMyApp::SEMMIENUM: //--------------------------------------------------------------------------------------------------
-		{
-			if (selectedImFVec.size() > 0) {
+	case CMyApp::SEMMIENUM: //--------------------------------------------------------------------------------------------------
+	{
+		if (selectedImFVec.size() > 0) {
 
-				ImGui::PushStyleColor(ImGuiCol_Header, Colors[ColorEnum::HEADER]);
-				ImGui::PushStyleColor(ImGuiCol_HeaderHovered, Colors[ColorEnum::HEADER_HOVERED]);
-				ImGui::PushStyleColor(ImGuiCol_HeaderActive, Colors[ColorEnum::HEADER_ACTIVE]);
-				ImGui::PushStyleColor(ImGuiCol_Text, Colors[ColorEnum::TEXT_DARK]);
+			ImGui::PushStyleColor(ImGuiCol_Header, Colors[ColorEnum::HEADER]);
+			ImGui::PushStyleColor(ImGuiCol_HeaderHovered, Colors[ColorEnum::HEADER_HOVERED]);
+			ImGui::PushStyleColor(ImGuiCol_HeaderActive, Colors[ColorEnum::HEADER_ACTIVE]);
+			ImGui::PushStyleColor(ImGuiCol_Text, Colors[ColorEnum::TEXT_DARK]);
 
-				if (ImGui::CollapsingHeader("Selected images in full size", ImGuiTreeNodeFlags_DefaultOpen)) {
+			if (ImGui::CollapsingHeader("Selected images in full size", ImGuiTreeNodeFlags_DefaultOpen)) {
 
-					RegularModify::CursorPos(20);
-					for (int i = 0; i < selectedImFVec.size(); i++) {
+				RegularModify::CursorPos(20);
+				for (int i = 0; i < selectedImFVec.size(); i++) {
 
-						switch (imfVec[selectedImFVec[i]].iof) {
-							case iofImage: {
-								imfVec[selectedImFVec[i]].im.drawImage();
-								break;
-							}
-							case iofFolder: {
-								imfVec[selectedImFVec[i]].f.drawImage();
-								break;
-							}
-							default: {
-								break;
-							}
-						}
-
-						ImGui::SameLine();
+					switch (imfVec[selectedImFVec[i]].iof) {
+					case iofImage: {
+						imfVec[selectedImFVec[i]].im.drawImage();
+						break;
 					}
-					ImGui::NewLine(); ImGui::NewLine();
-				}
-				ImGui::PopStyleColor(4);
+					case iofFolder: {
+						imfVec[selectedImFVec[i]].f.drawImage();
+						break;
+					}
+					default: {
+						break;
+					}
+					}
 
+					ImGui::SameLine();
+				}
 				ImGui::NewLine(); ImGui::NewLine();
 			}
+			ImGui::PopStyleColor(4);
 
-			 
+			ImGui::NewLine(); ImGui::NewLine();
+		}
 
-			SetBasicUI();
-			ImGui::PushStyleColor(ImGuiCol_Button, Colors[ColorEnum::BUTTON_BLUE]);
-			ImGui::PushStyleColor(ImGuiCol_ButtonHovered, Colors[ColorEnum::BUTTON_BLUE_HOVERED]);
-			ImGui::PushStyleColor(ImGuiCol_ButtonActive, Colors[ColorEnum::BUTTON_BLUE_ACTIVE]);
 
-			ImGui::BeginChild("Operations", ImVec2(0, 140), false);
+
+		SetBasicUI();
+		ImGui::PushStyleColor(ImGuiCol_Button, Colors[ColorEnum::BUTTON_BLUE]);
+		ImGui::PushStyleColor(ImGuiCol_ButtonHovered, Colors[ColorEnum::BUTTON_BLUE_HOVERED]);
+		ImGui::PushStyleColor(ImGuiCol_ButtonActive, Colors[ColorEnum::BUTTON_BLUE_ACTIVE]);
+
+		ImGui::BeginChild("Operations", ImVec2(0, 140), false); {
 
 			imFo->Scale = 1.5f;	ImGui::PushFont(imFo);
 			ImGui::NewLine(); RegularModify::CursorPos(20); ImGui::Text("Operations:");
@@ -261,10 +250,10 @@ void CMyApp::Render()
 			ImGui::NewLine();
 
 			int rowNo = 0;
-			if (selectedImFVec.size() == 0) { rowNo = 1; }
-			else if (selectedImFVec.size() == 1) { rowNo = 2; }
-			else if (selectedImFVec.size() == 2) { rowNo = 4; }
-			else { rowNo = 2; }
+			if (selectedImFVec.size() == 0) { rowNo = 2; }
+			else if (selectedImFVec.size() == 1) { rowNo = 4; }
+			else if (selectedImFVec.size() == 2) { rowNo = 6; }
+			else { rowNo = 4; }
 
 			ImGui::Columns(rowNo, "mycolumnsselected", false);
 			imFo->Scale = 1.3f;
@@ -277,36 +266,67 @@ void CMyApp::Render()
 					currentImageEnum = LOADENUM;
 				}
 				ImGui::NextColumn();
+				if (ImGui::Button("Static", ImVec2(150, 50))) {
+
+					im0stat.Reset();
+
+					im0stat.StaticMethod();
+
+					currentImageEnum = STATICNOISEENUM;
+				}
+				ImGui::NextColumn();
 			}
 
-			if (selectedImFVec.size() >= 1) { //!!selectedImFVec imfVec
+			if (selectedImFVec.size() >= 1) {
 
 				RegularModify::CursorPos(20);
-			//	if (imfVec[selectedImFVec[0]].getSurface()->w >= 10 && imfVec[selectedImFVec[0]].getSurface()->h >= 10) {
-					if (ImGui::Button("Magnify", ImVec2(150, 50))) {
-						currentImageEnum = MAGNIFYENUM;
+				if (ImGui::Button("Magnify", ImVec2(150, 50))) {
+					currentImageEnum = MAGNIFYENUM;
 
-						if (imfVec[selectedImFVec[0]].iof == iofImage) {
-							im1mag.setImage(imfVec[selectedImFVec[0]].im);
-							im1mag.Reset();
-							im1mag.MagnifyMethod(imfVec[selectedImFVec[0]].im);
-						}
-						else if (imfVec[selectedImFVec[0]].iof == iofFolder) {
-							im1mag.setImage(imfVec[selectedImFVec[0]].f.images[0]);
-							im1mag.Reset();
-							im1mag.MagnifyMethod(imfVec[selectedImFVec[0]].f.images[0]);
-						}
+					if (imfVec[selectedImFVec[0]].iof == iofImage) {
+						im1mag.setImage(imfVec[selectedImFVec[0]].im);
+						im1mag.Reset();
+						im1mag.MagnifyMethod(imfVec[selectedImFVec[0]].im);
 					}
-			//	}
-			/*	else {
-					ImGui::PushStyleColor(ImGuiCol_Button, Colors[ColorEnum::BUTTON_GREY]);
-					ImGui::PushStyleColor(ImGuiCol_ButtonHovered, Colors[ColorEnum::BUTTON_GREY_HOVERED]);
-					ImGui::PushStyleColor(ImGuiCol_ButtonActive, Colors[ColorEnum::BUTTON_RED_ACTIVE]);
-					ImGui::Button("Magnify", ImVec2(150, 50));
-					ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(255, 0, 0, 255));
-					RegularModify::ShowHelpMarker("The magnify operation requires the image to be at least 10 pixels in both width and height.");
-					ImGui::PopStyleColor(4);
-				}*/
+					else if (imfVec[selectedImFVec[0]].iof == iofFolder) {
+						im1mag.setImage(imfVec[selectedImFVec[0]].f.images[0]);
+						im1mag.Reset();
+						im1mag.MagnifyMethod(imfVec[selectedImFVec[0]].f.images[0]);
+					}
+				}
+				
+				ImGui::NextColumn();
+				if (ImGui::Button("Blur", ImVec2(150, 50))) {
+					currentImageEnum = BLURENUM;
+
+					if (imfVec[selectedImFVec[0]].iof == iofImage) {
+						im1blur.setImage(imfVec[selectedImFVec[0]].im);
+						im1blur.Reset();
+						im1blur.BlurMethod(imfVec[selectedImFVec[0]].im);
+					}
+					else if (imfVec[selectedImFVec[0]].iof == iofFolder) {
+						im1blur.setImage(imfVec[selectedImFVec[0]].f.images[0]);
+						im1blur.Reset();
+						im1blur.BlurMethod(imfVec[selectedImFVec[0]].f.images[0]);
+					}
+				}
+
+				ImGui::NextColumn();
+				if (ImGui::Button("Color", ImVec2(150, 50))) {
+					currentImageEnum = COLORENUM;
+
+					if (imfVec[selectedImFVec[0]].iof == iofImage) {
+						im1col.setImage(imfVec[selectedImFVec[0]].im);
+						im1col.Reset();
+						im1col.ColorMethod(imfVec[selectedImFVec[0]].im);
+					}
+					else if (imfVec[selectedImFVec[0]].iof == iofFolder) {
+						im1col.setImage(imfVec[selectedImFVec[0]].f.images[0]);
+						im1col.Reset();
+						im1col.ColorMethod(imfVec[selectedImFVec[0]].f.images[0]);
+					}
+				}
+
 				ImGui::NextColumn();
 
 				if (ImGui::Button("Save", ImVec2(150, 50))) {
@@ -355,27 +375,59 @@ void CMyApp::Render()
 							im2merge.setImage(imfVec[selectedImFVec[0]].im);
 							im2merge.Reset();
 							if (imfVec[selectedImFVec[1]].iof == iofImage) {
-								im2merge.plotLineMerge(im2merge.getUx(), im2merge.getUy(),imfVec[selectedImFVec[0]].im, imfVec[selectedImFVec[1]].im);
+								im2merge.plotLineMerge(im2merge.getUx(), im2merge.getUy(), imfVec[selectedImFVec[0]].im, imfVec[selectedImFVec[1]].im);
 							}
 							else if (imfVec[selectedImFVec[1]].iof == iofFolder) {
-								im2merge.plotLineMerge(im2merge.getUx(), im2merge.getUy(),imfVec[selectedImFVec[0]].im, imfVec[selectedImFVec[1]].f.images[0]);
+								im2merge.plotLineMerge(im2merge.getUx(), im2merge.getUy(), imfVec[selectedImFVec[0]].im, imfVec[selectedImFVec[1]].f.images[0]);
 							}
 						}
 						else if (imfVec[selectedImFVec[0]].iof == iofFolder) {
 							im2merge.setImage(imfVec[selectedImFVec[0]].f.images[0]);
 							im2merge.Reset();
 							if (imfVec[selectedImFVec[1]].iof == iofImage) {
-								im2merge.plotLineMerge(im2merge.getUx(), im2merge.getUy(),imfVec[selectedImFVec[0]].f.images[0], imfVec[selectedImFVec[1]].im);
+								im2merge.plotLineMerge(im2merge.getUx(), im2merge.getUy(), imfVec[selectedImFVec[0]].f.images[0], imfVec[selectedImFVec[1]].im);
 							}
 							else if (imfVec[selectedImFVec[1]].iof == iofFolder) {
-								im2merge.plotLineMerge(im2merge.getUx(), im2merge.getUy(),imfVec[selectedImFVec[0]].f.images[0], imfVec[selectedImFVec[1]].f.images[0]);
+								im2merge.plotLineMerge(im2merge.getUx(), im2merge.getUy(), imfVec[selectedImFVec[0]].f.images[0], imfVec[selectedImFVec[1]].f.images[0]);
 							}
 						}
 					}
 					ImGui::NextColumn();
 				}
 				else {
-					//no match
+					ImGui::PushStyleColor(ImGuiCol_Button, Colors[ColorEnum::BUTTON_GREY]);
+					ImGui::PushStyleColor(ImGuiCol_ButtonHovered, Colors[ColorEnum::BUTTON_GREY_HOVERED]);
+					ImGui::PushStyleColor(ImGuiCol_ButtonActive, Colors[ColorEnum::BUTTON_RED_ACTIVE]);
+
+					ImGui::Button("SSIM", ImVec2(150, 50));
+					ImGui::PushStyleColor(ImGuiCol_Text, Colors[ColorEnum::TEXT_DARK]);
+					if (ImGui::IsItemHovered())
+					{
+						ImGui::BeginTooltip();
+						ImGui::PushTextWrapPos(450.0f);
+						ImGui::TextUnformatted("The SSIM operation requires the images to be the same size.");
+						ImGui::PopTextWrapPos();
+						ImGui::EndTooltip();
+					}
+					ImGui::PopStyleColor();
+
+					ImGui::NextColumn();
+
+					ImGui::Button("Merge", ImVec2(150, 50));
+					ImGui::PushStyleColor(ImGuiCol_Text, Colors[ColorEnum::TEXT_DARK]);
+					if (ImGui::IsItemHovered())
+					{
+						ImGui::BeginTooltip();
+						ImGui::PushTextWrapPos(450.0f);
+						ImGui::TextUnformatted("The Merge operation requires the images to be the same size.");
+						ImGui::PopTextWrapPos();
+						ImGui::EndTooltip();
+					}
+					ImGui::PopStyleColor();
+
+					ImGui::PopStyleColor(3);
+
+					ImGui::NextColumn();
 				}
 			}
 
@@ -384,7 +436,7 @@ void CMyApp::Render()
 			ImGui::PopFont();
 
 			ImGui::PopStyleColor();
-
+		}
 			ImGui::EndChild();
 			ImGui::PopStyleVar(2); ImGui::PopStyleColor(8);
 
@@ -395,11 +447,18 @@ void CMyApp::Render()
 			SetBasicUI();
 			ImGui::PushStyleColor(ImGuiCol_FrameBg, Colors[ColorEnum::INPUT_BG]);
 
-			ImGui::BeginChild("Load", ImVec2(0, 200), false);
-
+			ImGui::BeginChild("Name_Load", ImVec2(400, 65), false); {
 				imFo->Scale = 1.5f;	ImGui::PushFont(imFo);
-				ImGui::NewLine(); RegularModify::CursorPos(20); ImGui::Text("Load");
+				ImGui::NewLine(); RegularModify::CursorPos(20); ImGui::Text("Load from file");
 				imFo->Scale = 1.f;	ImGui::PopFont();
+			}
+			ImGui::EndChild();
+
+			ImGui::NewLine();
+
+			ImGui::BeginChild("Values_Load", ImVec2(400, 110), false); {
+
+				ImGui::NewLine();
 				ImGui::NewLine();
 				char* segedLoadRadioNames[] = { "Image","Folder" };
 				int segedLoadType = im0load.getLoadType();
@@ -410,55 +469,58 @@ void CMyApp::Render()
 					}
 				}
 				ImGui::NewLine();
-				RegularModify::CursorPos(20); ImGui::Text(im0load.getLoadType() == im0load.PICTURE ? "The image's path:" : im0load.getLoadType() == im0load.FOLDER ? "The folder's path:" :  "");
-				ImGui::PushItemWidth(320);
+				RegularModify::CursorPos(20); ImGui::Text(im0load.getLoadType() == im0load.PICTURE ? "The image's path:" : im0load.getLoadType() == im0load.FOLDER ? "The folder's path:" : "");
+				ImGui::PushItemWidth(360);
 				RegularModify::CursorPos(20); ImGui::InputText("##StrAdd", stradd, IM_ARRAYSIZE(stradd));
 				ImGui::PopItemWidth();
 
-				if (currentErrors[0]) {
+				/*if (currentErrors[0]) {
 					ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(255, 0, 0, 255));
 					RegularModify::CursorPos(20); ImGui::Text("Incorrect path");
 					ImGui::PopStyleColor();
 				}
-				else ImGui::NewLine();
+				else*/ 
+				ImGui::NewLine();
+			}
 
+			ImGui::EndChild();
+			ImGui::NewLine();
+			ImGui::BeginChild("Buttons_Load", ImVec2(400, 80), false); {
+				//--------button
+
+				ImGui::NewLine();
 				PushStyleColorGreenButton();
 
 				imFo->Scale = 1.3f;
 				ImGui::PushFont(imFo); RegularModify::CursorPos(20);
-
-				//--------button
-
-				if (ImGui::Button("Load##stradd", ImVec2(150, 50))) {
+				if (ImGui::Button("Load##Load", ImVec2(150, 50))) {
 					switch (im0load.getLoadType())
 					{
-					case Image0FromFile::loadTypeEnum::PICTURE :{
+					case Image0FromFile::loadTypeEnum::PICTURE: {
 
 						if (RegularModify::Verify(stradd, straddverified)) {
-							Image sizeVerify = Image0FromFile::Load(straddverified); //fix!!
+							Image sizeVerify = Image0FromFile::Load(straddverified);
 							if (sizeVerify.getSurface() != nullptr && sizeVerify.getSurface()->h > 10 && sizeVerify.getSurface()->w > 10) {
 								ImageFolder seged;
-								seged.im = sizeVerify; //Image0FromFile::Load(straddverified);
+								seged.im = sizeVerify;
 								seged.iof = iofImage;
 								imfVec.push_back(seged);
 
 								StoredOperaionsClass s;
 								storedOperationsVector.push_back(s);
-
-								currentErrors[0] = false;
 							}
 							else {
-								//errors 
+								ImGui::OpenPopup("Load##InvalidSize");
 							}
-							
+
 						}
 						else {
-							currentErrors[0] = true;
+							ImGui::OpenPopup("Load##InvalidPath");
 						}
 						break;
 					}
 
-					case Image0FromFile::loadTypeEnum::FOLDER :{
+					case Image0FromFile::loadTypeEnum::FOLDER: {
 
 						Folder fold;
 						std::string path = stradd;
@@ -469,20 +531,19 @@ void CMyApp::Render()
 						HANDLE hFind = FindFirstFileA(path.c_str(), &ffd);
 
 						if (hFind == INVALID_HANDLE_VALUE) {
-							currentErrors[0] = true;
+							ImGui::OpenPopup("Load##InvalidPath");
 							break;
 						}
-						
-						currentErrors[0] = false;
+
 						while (FindNextFileA(hFind, &ffd) != 0)
-						{	
+						{
 							std::string seged = path2 + "/" + (std::string)ffd.cFileName;
 							char* cstr = new char[seged.size() + 1];
 							std::strcpy(cstr, seged.c_str());
 
 							if (RegularModify::Verify(cstr, straddverified)) {
-								if (!fold.Load(straddverified)) {
-									//error
+								if (!fold.Load(straddverified)) { //might not be necesseary to be a method
+									ImGui::OpenPopup("Load##FolderInvalidSize");
 								}
 								else {
 									std::cout << cstr << std::endl;
@@ -493,14 +554,14 @@ void CMyApp::Render()
 						FindClose(hFind);
 
 						if (fold.images.size() == 0) {
-							//error
+							ImGui::OpenPopup("Load##EmptyFolder");
 						}
 						else {
 
 							for (Image im : fold.images) {
 								im.textureFromSurface();
 							}
-							
+
 							fold.createIconImageFromImages();
 
 							ImageFolder seged;
@@ -522,30 +583,234 @@ void CMyApp::Render()
 
 				ImGui::PopStyleColor(3);
 
-				ImGui::SameLine(); RegularModify::CursorPos(190);
+				ImGui::SameLine(); RegularModify::CursorPos(400 - 170);
 				Back();
 
 				imFo->Scale = 1.f;
 				ImGui::PopFont();
 
+
+				if (ImGui::BeginPopupModal("Load##InvalidPath", NULL, ImGuiWindowFlags_AlwaysAutoResize))
+				{
+					ImGui::Text("Invalid path.");
+					if (ImGui::Button("OK", ImVec2(120, 0))) { ImGui::CloseCurrentPopup(); }
+					ImGui::EndPopup();
+				}
+				if (ImGui::BeginPopupModal("Load##InvalidSize", NULL, ImGuiWindowFlags_AlwaysAutoResize))
+				{
+					ImGui::Text("The image's size must be bigger than 10x10 pixels.");
+					if (ImGui::Button("OK", ImVec2(120, 0))) { ImGui::CloseCurrentPopup(); }
+					ImGui::EndPopup();
+				}
+				if (ImGui::BeginPopupModal("Load##FolderInvalidSize", NULL, ImGuiWindowFlags_AlwaysAutoResize))
+				{
+					ImGui::Text("Some of the images might have not been loaded, as the image's size must be bigger than 10x10 pixels.");
+					if (ImGui::Button("OK", ImVec2(120, 0))) { ImGui::CloseCurrentPopup(); }
+					ImGui::EndPopup();
+				}
+				if (ImGui::BeginPopupModal("Load##EmptyFolder", NULL, ImGuiWindowFlags_AlwaysAutoResize))
+				{
+					ImGui::Text("The folder has no images inside.");
+					if (ImGui::Button("OK", ImVec2(120, 0))) { ImGui::CloseCurrentPopup(); }
+					ImGui::EndPopup();
+				}
+			}
 			ImGui::EndChild();
 
 			ImGui::PopStyleVar(2); ImGui::PopStyleColor(6);
 
 			break;
 		}
+
+		case CMyApp::STATICNOISEENUM: { //----------------------------------------------------------------------------------------------
+			//RegularModify::ShowHelpMarker("Right-click on the individual color widget to show options.");
+			
+			SetBasicUI();
+			ImGui::PushStyleColor(ImGuiCol_FrameBg, Colors[ColorEnum::INPUT_BG]);
+
+			ImGui::BeginChild("Name_StaticNoise", ImVec2(max(im0stat.staticnoise.getSurface()->w, 400), 65), false); {
+
+				imFo->Scale = 1.5f;	ImGui::PushFont(imFo);
+				ImGui::NewLine();
+				RegularModify::CursorPos(20); ImGui::Text("Static Noise");
+				imFo->Scale = 1.f;	ImGui::PopFont();
+			
+			}
+
+			ImGui::EndChild();
+
+			ImGui::NewLine();
+			ImGui::Image((void*)(intptr_t)im0stat.staticnoise.getTexture(), ImVec2(im0stat.staticnoise.getSurface()->w, im0stat.staticnoise.getSurface()->h));
+			ImGui::NewLine();
+
+			ImGui::BeginChild("Values_StaticNoise", ImVec2(max(im0stat.staticnoise.getSurface()->w, 400), (215 + im0stat.color.size() * 76)), false); {
+
+				ImGui::NewLine();
+
+				ImGui::PushStyleColor(ImGuiCol_Button, Colors[ColorEnum::BUTTON_BLUE]);
+				ImGui::PushStyleColor(ImGuiCol_ButtonHovered, Colors[ColorEnum::BUTTON_BLUE_HOVERED]);
+				ImGui::PushStyleColor(ImGuiCol_ButtonActive, Colors[ColorEnum::BUTTON_BLUE_ACTIVE]);
+				ImGui::PushStyleColor(ImGuiCol_Text, Colors[ColorEnum::TEXT_LIGHT]);
+				imFo->Scale = 1.3f;
+				ImGui::PushFont(imFo);
+				RegularModify::CursorPos((max(im0stat.staticnoise.getSurface()->w, 400) / 2.0f) - (150.0f / 2.0f));
+				if (ImGui::Button("Regenerate##StaticNoise", ImVec2(150, 50))) {
+					im0stat.StaticMethod();
+				}
+				ImGui::PopStyleColor(4);
+				imFo->Scale = 1.f; ImGui::PopFont();
+				ImGui::NewLine();
+
+				RegularModify::CursorPos(20); ImGui::Text("Width:");
+				ImGui::SameLine();
+				RegularModify::CursorPos(270);
+				ImGui::PushItemWidth(fmax(im0stat.staticnoise.getSurface()->w, 400) - 290);
+				int segedim0statwidth = im0stat.width;
+				if (ImGui::InputInt("##staticnoideWidth", &segedim0statwidth, 0)) {
+					if (segedim0statwidth > 0) {
+						im0stat.width = segedim0statwidth;
+					}
+				}
+				ImGui::PopItemWidth();
+
+				RegularModify::CursorPos(20); ImGui::Text("Height:");
+				ImGui::SameLine();
+				RegularModify::CursorPos(270);
+				ImGui::PushItemWidth(fmax(im0stat.staticnoise.getSurface()->w, 400) - 290);
+				int segedim0statheight = im0stat.height;
+				if (ImGui::InputInt("##staticnoideHeight", &segedim0statheight, 0)) {
+					if (segedim0statheight > 0) {
+						im0stat.height = segedim0statheight;
+					}
+				}
+				ImGui::PopItemWidth();
+
+				ImGui::NewLine();
+				RegularModify::CursorPos(20); ImGui::Text("Colors:");
+				int misc_flags = ImGuiColorEditFlags_AlphaPreviewHalf /* | ImGuiColorEditFlags_AlphaPreview */;
+
+				for (int i = 0; i < im0stat.color.size(); i++) {
+
+					RegularModify::CursorPos(40);
+					ImGui::Text("Color %i", i + 1);
+					RegularModify::CursorPos(40); bool open_popup = ImGui::ColorButton(("MyColor##" + std::to_string(i)).c_str(), im0stat.color[i], misc_flags, ImVec2(40, 40));
+					ImGui::SameLine();
+					open_popup |= ImGui::Button(("Palette##" + std::to_string(i)).c_str(), ImVec2(60, 30));
+					if (open_popup)
+					{
+						ImGui::OpenPopup(("mypicker" + std::to_string(i)).c_str());
+						im0stat.backup_color[i] = im0stat.color[i];
+					}
+					if (im0stat.color.size() > 1) {
+						ImGui::SameLine();
+						if (ImGui::Button(("Delete##" + std::to_string(i)).c_str(), ImVec2(60, 30))) {
+							im0stat.color.erase(im0stat.color.begin() + i);
+							im0stat.backup_color.erase(im0stat.backup_color.begin() + i);
+						}
+					}
+
+					//darkbg
+					ImGui::PushStyleColor(ImGuiCol_PopupBg, Colors[ColorEnum::TEXT_DARK]);
+					ImGui::PushStyleColor(ImGuiCol_FrameBg, Colors[ColorEnum::TEXT_DARK]);
+					ImGui::PushStyleColor(ImGuiCol_Text, Colors[ColorEnum::TEXT_LIGHT]);
+					if (ImGui::BeginPopup(("mypicker" + std::to_string(i)).c_str()))
+					{
+						ImGui::Text("COLOR PICKER");
+						ImGui::Separator();
+						ImGui::ColorPicker4("##picker", (float*)&im0stat.color[i], misc_flags | ImGuiColorEditFlags_NoSidePreview | ImGuiColorEditFlags_NoSmallPreview);
+						ImGui::SameLine();
+						ImGui::BeginGroup();
+						ImGui::Text("Current");
+						ImGui::ColorButton("##current", im0stat.color[i], ImGuiColorEditFlags_NoPicker | ImGuiColorEditFlags_AlphaPreviewHalf, ImVec2(60, 40));
+						ImGui::Text("Previous");
+						if (ImGui::ColorButton("##previous", im0stat.backup_color[i], ImGuiColorEditFlags_NoPicker | ImGuiColorEditFlags_AlphaPreviewHalf, ImVec2(60, 40)))
+							im0stat.color[i] = im0stat.backup_color[i];
+						ImGui::Separator();
+						ImGui::Text("Palette");
+						for (int n = 0; n < IM_ARRAYSIZE(im0stat.saved_palette); n++)
+						{
+							ImGui::PushID(n);
+							if ((n % 8) != 0)
+								ImGui::SameLine(0.0f, ImGui::GetStyle().ItemSpacing.y);
+							if (ImGui::ColorButton("##palette", im0stat.saved_palette[n], ImGuiColorEditFlags_NoPicker | ImGuiColorEditFlags_NoTooltip, ImVec2(20, 20)))
+								im0stat.color[i] = ImVec4(im0stat.saved_palette[n].x, im0stat.saved_palette[n].y, im0stat.saved_palette[n].z, im0stat.color[i].w); // Preserve alpha!
+							ImGui::PopID();
+						}
+						ImGui::EndGroup();
+						ImGui::EndPopup();
+					}
+					ImGui::PopStyleColor(3);
+					ImGui::NewLine();
+
+				}
+				RegularModify::CursorPos(20);
+				if (ImGui::Button("Add new", ImVec2(60, 30))) {
+					im0stat.color.push_back(ImColor(255, 255, 255, 255));
+					im0stat.backup_color.push_back(ImColor(255, 255, 255, 255));
+				}
+
+				ImGui::NewLine();
+			}
+			ImGui::EndChild();
+
+			ImGui::NewLine();
+
+			ImGui::BeginChild("Buttons_StaticNoise", ImVec2(max(im0stat.staticnoise.getSurface()->w, 400), 80)); {
+
+				ImGui::NewLine();
+				RegularModify::CursorPos(20);
+
+				PushStyleColorGreenButton();
+
+				imFo->Scale = 1.3f;
+				ImGui::PushFont(imFo);
+				if (ImGui::Button("Load##StaticNoise", ImVec2(150, 50))) {
+					SDL_Surface* source = im0stat.staticnoise.getSurface();
+					SDL_Surface* destination = SDL_CreateRGBSurfaceWithFormat(0,
+						source->w, source->h, source->format->BitsPerPixel, source->format->format);
+					if (destination != nullptr) {
+						SDL_BlitSurface(source, nullptr, destination, nullptr);
+					}
+					Image imseged;
+					imseged.setSurface(destination);
+					imseged.textureFromSurface();
+
+					ImageFolder imfseged;
+					imfseged.iof = iofImage;
+					imfseged.im = imseged;
+
+					imfVec.push_back(imfseged);
+
+					StoredOperaionsClass s;
+					storedOperationsVector.push_back(s);
+				}
+
+				ImGui::PopStyleColor(3);
+
+				ImGui::SameLine(); RegularModify::CursorPos(max(400 - 170, im0stat.staticnoise.getSurface()->w - 170));
+				Back();
+				imFo->Scale = 1.f;
+				ImGui::PopFont();
+			}
+			ImGui::EndChild();
+
+			ImGui::PopStyleVar(2); ImGui::PopStyleColor(6);
+
+			break;
+		}
+
 		case CMyApp::MAGNIFYENUM: //------------------------------------------------------------------------------------------------
 		{
 			SetBasicUI();
 			ImGui::PushStyleColor(ImGuiCol_FrameBg, Colors[ColorEnum::INPUT_BG]);
 
-			ImGui::BeginChild("Name1", ImVec2(max(im1mag.imOut.getSurface()->w, 360), 65), false);
+			ImGui::BeginChild("Name_Magnify", ImVec2(max(im1mag.imOut.getSurface()->w, 400), 65), false); {
 
 				imFo->Scale = 1.5f;	ImGui::PushFont(imFo);
 				ImGui::NewLine();
 				RegularModify::CursorPos(20); ImGui::Text("Magnify");
 				imFo->Scale = 1.f;	ImGui::PopFont();
-
+			}
 			ImGui::EndChild();
 			ImGui::NewLine();
 
@@ -553,11 +818,11 @@ void CMyApp::Render()
 
 			ImGui::NewLine();
 
-			ImGui::BeginChild("Magnify", ImVec2(max(im1mag.imOut.getSurface()->w, 360), 180), false);
+			ImGui::BeginChild("Values_Magnify", ImVec2(max(im1mag.imOut.getSurface()->w, 400), 180), false); {
 
 				imFo->Scale = 1.3f;
 				ImGui::PushFont(imFo);
-				ImGui::NewLine(); RegularModify::CursorPos(1 * fmax(im1mag.imOut.getSurface()->w, 360) / 4 - 70);
+				ImGui::NewLine(); RegularModify::CursorPos(1 * fmax(im1mag.imOut.getSurface()->w, 400) / 4 - 70);
 
 				if (im1mag.getSmallChange()) {
 					ImGui::PushStyleColor(ImGuiCol_Button, Colors[ColorEnum::BUTTON_GREEN]);
@@ -580,7 +845,7 @@ void CMyApp::Render()
 				ImGui::SameLine();
 				imFo->Scale = 1.3f;
 				ImGui::PushFont(imFo);
-				RegularModify::CursorPos(3 * fmax(im1mag.imOut.getSurface()->w, 360) / 4 - 70);
+				RegularModify::CursorPos(3 * fmax(im1mag.imOut.getSurface()->w, 400) / 4 - 70);
 				if (!im1mag.getSmallChange()) {
 					ImGui::PushStyleColor(ImGuiCol_Button, Colors[ColorEnum::BUTTON_GREEN]);
 					ImGui::PushStyleColor(ImGuiCol_ButtonHovered, Colors[ColorEnum::BUTTON_GREEN_HOVERED]);
@@ -606,7 +871,7 @@ void CMyApp::Render()
 				RegularModify::CursorPos(20); ImGui::Text("Width:");
 				ImGui::SameLine();
 				RegularModify::CursorPos(270);
-				ImGui::PushItemWidth(fmax(im1mag.imOut.getSurface()->w, 360) - 290);
+				ImGui::PushItemWidth(fmax(im1mag.imOut.getSurface()->w, 400) - 290);
 				int segedZoomW = im1mag.getZoomW();
 				if (ImGui::InputInt("##ZoomWidth", &segedZoomW, 0)) {
 					if (segedZoomW < 1) {
@@ -622,7 +887,7 @@ void CMyApp::Render()
 				RegularModify::CursorPos(20); ImGui::Text("Heiht:");
 				ImGui::SameLine();
 				RegularModify::CursorPos(270);
-				ImGui::PushItemWidth(fmax(im1mag.imOut.getSurface()->w, 360) - 290);
+				ImGui::PushItemWidth(fmax(im1mag.imOut.getSurface()->w, 400) - 290);
 				int segedZoomH = im1mag.getZoomH();
 				if (ImGui::InputInt("##ZoomHeight", &segedZoomH, 0)) {
 					if (segedZoomH < 1) {
@@ -639,7 +904,7 @@ void CMyApp::Render()
 				RegularModify::CursorPos(20); ImGui::Text("Magnification level:");
 				ImGui::SameLine();
 				RegularModify::CursorPos(190);
-				ImGui::PushItemWidth(fmax(im1mag.imOut.getSurface()->w, 360) - 210);
+				ImGui::PushItemWidth(fmax(im1mag.imOut.getSurface()->w, 400) - 210);
 				float segedZoomTimes = im1mag.getZoomTimes();
 				if (ImGui::SliderFloat("##ZoomTimes", &segedZoomTimes, 1.0f, 10.0f, "%.4f")) {
 					im1mag.setZoomTimes(segedZoomTimes);
@@ -651,16 +916,16 @@ void CMyApp::Render()
 						segedZoomH = im1mag.imOut.getSurface()->h / (im1mag.getZoomTimes() + 1);
 						im1mag.setZoomH(segedZoomH);
 					}
-					
+
 				}
 				ImGui::PopItemWidth();
-
+			}
 			ImGui::EndChild();
 			ImGui::NewLine();
 
 			//--------button
 
-			ImGui::BeginChild("EndButtons_1", ImVec2(max(im1mag.imOut.getSurface()->w, 360), 80));
+			ImGui::BeginChild("Buttons_Magnify", ImVec2(max(im1mag.imOut.getSurface()->w, 400), 80)); {
 				ImGui::NewLine();
 				RegularModify::CursorPos(20);
 
@@ -668,11 +933,11 @@ void CMyApp::Render()
 
 				imFo->Scale = 1.3f;
 				ImGui::PushFont(imFo);
-				if (ImGui::Button("Load##stradd", ImVec2(150, 50))) {
+				if (ImGui::Button("Load##Magnify", ImVec2(150, 50))) {
 
 					//image
-					if (selectedImFVec.size() == 1 && imfVec[selectedImFVec[0]].iof==iofImage) {
-						
+					if (selectedImFVec.size() == 1 && imfVec[selectedImFVec[0]].iof == iofImage) {
+
 						SDL_Surface* source = im1mag.imOut.getSurface();
 						SDL_Surface* destination = SDL_CreateRGBSurfaceWithFormat(0,
 							source->w, source->h, source->format->BitsPerPixel, source->format->format);
@@ -709,7 +974,7 @@ void CMyApp::Render()
 						Folder segedFolder;
 						StoredOperaionsClass segedStoredOperationsClass;
 						int offset = 0;
-						for (int i = 0; i < selectedImFVec.size();i++) {
+						for (int i = 0; i < selectedImFVec.size(); i++) {
 							if (imfVec[selectedImFVec[i]].iof == iofImage) {
 								segedFolder.Append(imfVec[selectedImFVec[i]].im);
 								offset++;
@@ -757,34 +1022,409 @@ void CMyApp::Render()
 						imfVec.push_back(imfseged);
 
 					}
-					ImGui::OpenPopup("Betoltes##Pop"); //!!!!!!!!!!!!!!
 				}
 
 				ImGui::PopStyleColor(3);
 
-				ImGui::SameLine(); RegularModify::CursorPos(max(170, im1mag.imOut.getSurface()->w - 170));
+				ImGui::SameLine(); RegularModify::CursorPos(max(400 - 170, im1mag.imOut.getSurface()->w - 170));
 				Back();
 
 				imFo->Scale = 1.f;
 				ImGui::PopFont();
-
+			}
 			ImGui::EndChild();
 
 			ImGui::PopStyleVar(2); ImGui::PopStyleColor(6);
 
 			break;
 		}
+
+		case CMyApp::BLURENUM: {//---------------------------------------------------------------------------------------------------
+			SetBasicUI();
+			ImGui::PushStyleColor(ImGuiCol_FrameBg, Colors[ColorEnum::INPUT_BG]);
+
+			ImGui::BeginChild("Name_Blur", ImVec2(max(im1blur.imOut.getSurface()->w, 400), 65), false); {
+
+				imFo->Scale = 1.5f;	ImGui::PushFont(imFo);
+				ImGui::NewLine();
+				RegularModify::CursorPos(20); ImGui::Text("Blur");
+				imFo->Scale = 1.f;	ImGui::PopFont();
+
+			}
+
+			ImGui::EndChild();
+
+			ImGui::NewLine();
+			ImGui::Image((void*)(intptr_t)im1blur.imOut.getTexture(), ImVec2(im1blur.imOut.getSurface()->w, im1blur.imOut.getSurface()->h));
+			ImGui::NewLine();
+
+			ImGui::BeginChild("Values_Blur", ImVec2(max(im1blur.imOut.getSurface()->w, 400), 200), false); {
+
+				ImGui::NewLine();
+
+
+				ImGui::PushStyleColor(ImGuiCol_Button, Colors[ColorEnum::BUTTON_BLUE]);
+				ImGui::PushStyleColor(ImGuiCol_ButtonHovered, Colors[ColorEnum::BUTTON_BLUE_HOVERED]);
+				ImGui::PushStyleColor(ImGuiCol_ButtonActive, Colors[ColorEnum::BUTTON_BLUE_ACTIVE]);
+				ImGui::PushStyleColor(ImGuiCol_Text, Colors[ColorEnum::TEXT_LIGHT]);
+				imFo->Scale = 1.3f;
+				ImGui::PushFont(imFo);
+				RegularModify::CursorPos((max(im1blur.imOut.getSurface()->w, 400) / 2.0f) - (150.0f / 2.0f));
+
+				if (ImGui::Button("Regenerate##Blur", ImVec2(150, 50))) {
+
+					if (imfVec[selectedImFVec[0]].iof == iofImage) {
+						im1blur.BlurMethod(imfVec[selectedImFVec[0]].im);
+					}
+					else if (imfVec[selectedImFVec[0]].iof == iofFolder) {
+						im1blur.BlurMethod(imfVec[selectedImFVec[0]].f.images[0]);
+					}
+				}
+
+				ImGui::PopStyleColor(4);
+				imFo->Scale = 1.f; ImGui::PopFont();
+				ImGui::NewLine();
+
+				RegularModify::CursorPos(20); ImGui::Text("Blur's type: "); ImGui::NewLine();
+				RegularModify::CursorPos(20);
+
+				char* segedBlurRadioNames[] = { "Box","Gaussian" };
+				int segedBlurType = im1blur.blurType;
+				for (int i = 0; i < sizeof(segedBlurRadioNames) / sizeof(char*); i++) {
+					ImGui::SameLine();
+					if (ImGui::RadioButton(segedBlurRadioNames[i], &segedBlurType, i)) {
+						im1blur.blurType = segedBlurType;
+						if (im1blur.blurType == 1 && im1blur.blurSize % 2 == 0) {
+							im1blur.blurSize--;
+						}
+					}
+				}
+
+				ImGui::NewLine();
+				RegularModify::CursorPos(20); ImGui::Text("The size of the Blur slices:");
+				ImGui::SameLine();
+				RegularModify::CursorPos(220);
+				ImGui::PushItemWidth(fmax(im1blur.imOut.getSurface()->w, 400) - 240);
+
+				int segedBlurSize = im1blur.blurSize;
+				if (ImGui::InputInt("##BlurSize", &segedBlurSize, 0)) {
+					if (segedBlurSize < 1) {
+						segedBlurSize = 1;
+					}
+					if (segedBlurSize > fmin(im1blur.imOut.getSurface()->w / 2, im1blur.imOut.getSurface()->h / 2)) {
+						segedBlurSize = fmin(im1blur.imOut.getSurface()->w / 2, im1blur.imOut.getSurface()->h / 2);
+					}
+
+					if (segedBlurSize % 2 == 0 && im1blur.blurType == 1) {
+						segedBlurSize--;
+					}
+					im1blur.blurSize = segedBlurSize;
+				}
+				//RegularModify::ShowHelpMarker("What times what should be the size of the slices that the SSIM algorithm uses");
+
+				ImGui::NewLine();
+			}
+
+			ImGui::EndChild();
+			ImGui::NewLine();
+
+			//--------button
+
+			ImGui::BeginChild("Buttons_Blur", ImVec2(max(im1blur.imOut.getSurface()->w, 400), 80)); {
+
+				ImGui::NewLine();
+
+				RegularModify::CursorPos(20);
+
+				imFo->Scale = 1.3f;
+				ImGui::PushFont(imFo);
+
+				PushStyleColorGreenButton();
+
+				if (ImGui::Button("Load##Blur", ImVec2(150, 50))) {
+
+					//image
+					if (selectedImFVec.size() == 1 && imfVec[selectedImFVec[0]].iof == iofImage) {
+
+						SDL_Surface* source = im1blur.imOut.getSurface();
+						SDL_Surface* destination = SDL_CreateRGBSurfaceWithFormat(0,
+							source->w, source->h, source->format->BitsPerPixel, source->format->format);
+						if (destination != nullptr) {
+							SDL_BlitSurface(source, nullptr, destination, nullptr);
+						}
+						Image imseged;
+						imseged.setSurface(destination);
+						imseged.textureFromSurface();
+
+						ImageFolder imfseged;
+						imfseged.iof = iofImage;
+						imfseged.im = imseged;
+
+						imfVec.push_back(imfseged);
+
+						StoredOperaionsClass s;
+						storedOperationsVector.push_back(s);
+
+					}
+
+					//folder
+					else {
+						Folder segedFolder;
+						StoredOperaionsClass segedStoredOperationsClass;
+						int offset = 0;
+						for (int i = 0; i < selectedImFVec.size(); i++) {
+							if (imfVec[selectedImFVec[i]].iof == iofImage) {
+								segedFolder.Append(imfVec[selectedImFVec[i]].im);
+								offset++;
+							}
+							else if (imfVec[selectedImFVec[i]].iof == iofFolder) {
+								segedFolder.Append(imfVec[selectedImFVec[i]].f);
+								//segedStoredOperationsClass += storedOperationsVector[i];
+
+								for (int j = 0; j < storedOperationsVector[i].storedOperationsElement.size(); j++) {
+									segedStoredOperationsClass.storedOperationsElement.push_back(storedOperationsVector[i].storedOperationsElement[j]);
+
+									for (int k = 0; k < storedOperationsVector[i].storedOperationsElement[j].affectedElements.size(); k++) {
+										segedStoredOperationsClass.storedOperationsElement[j].affectedElements[k] += offset;
+									}
+								}
+								offset += imfVec[selectedImFVec[i]].f.images.size();
+							}
+						}
+
+						SDL_Surface* source = im1blur.imOut.getSurface();
+						SDL_Surface* destination = SDL_CreateRGBSurfaceWithFormat(0,
+							source->w, source->h, source->format->BitsPerPixel, source->format->format);
+						if (destination != nullptr) {
+							SDL_BlitSurface(source, nullptr, destination, nullptr);
+						}
+						Image imseged;
+						imseged.setSurface(destination);
+						imseged.textureFromSurface();
+						segedFolder.images[0] = imseged;
+						segedFolder.createIconImageFromImages();
+
+						StoredOperaionsClass::storedOperation segedOp;
+						segedOp.ote = StoredOperaionsClass::oteImage1Blur;
+						segedOp.i1b = im1blur;
+						for (int i = 0; i < segedFolder.images.size(); i++) {
+							segedOp.affectedElements.push_back(i);
+						}
+						segedStoredOperationsClass.storedOperationsElement.push_back(segedOp);
+						storedOperationsVector.push_back(segedStoredOperationsClass);
+
+						ImageFolder imfseged;
+						imfseged.iof = iofFolder;
+						imfseged.f = segedFolder;
+
+						imfVec.push_back(imfseged);
+
+					}
+				}
+
+				ImGui::PopStyleColor(3);
+
+				ImGui::SameLine(); RegularModify::CursorPos(max(400 - 170, im1blur.imOut.getSurface()->w - 170));
+				Back();
+
+				imFo->Scale = 1.f;
+				ImGui::PopFont();
+			}
+			ImGui::EndChild();
+
+			ImGui::PopStyleVar(2); ImGui::PopStyleColor(6);
+
+			break;
+		}
+
+		case CMyApp::COLORENUM: {//---------------------------------------------------------------------------------------------------
+			SetBasicUI();
+			ImGui::PushStyleColor(ImGuiCol_FrameBg, Colors[ColorEnum::INPUT_BG]);
+
+			ImGui::BeginChild("Name_Color", ImVec2(max(im1col.imOut.getSurface()->w, 400), 65), false); {
+
+				imFo->Scale = 1.5f;	ImGui::PushFont(imFo);
+				ImGui::NewLine();
+				RegularModify::CursorPos(20); ImGui::Text("Modify image's color");
+				imFo->Scale = 1.f;	ImGui::PopFont();
+
+			}
+
+			ImGui::EndChild();
+
+			ImGui::NewLine();
+			ImGui::Image((void*)(intptr_t)im1col.imOut.getTexture(), ImVec2(im1col.imOut.getSurface()->w, im1col.imOut.getSurface()->h));
+			ImGui::NewLine();
+
+			ImGui::BeginChild("Color_Values", ImVec2(max(im1col.imOut.getSurface()->w, 400), 75), false); {
+
+				ImGui::NewLine();
+
+
+				/*ImGui::PushStyleColor(ImGuiCol_Button, Colors[ColorEnum::BUTTON_BLUE]);
+				ImGui::PushStyleColor(ImGuiCol_ButtonHovered, Colors[ColorEnum::BUTTON_BLUE_HOVERED]);
+				ImGui::PushStyleColor(ImGuiCol_ButtonActive, Colors[ColorEnum::BUTTON_BLUE_ACTIVE]);
+				ImGui::PushStyleColor(ImGuiCol_Text, Colors[ColorEnum::TEXT_LIGHT]);
+				imFo->Scale = 1.3f;
+				ImGui::PushFont(imFo);
+				RegularModify::CursorPos((max(im1col.imOut.getSurface()->w, 400) / 2.0f) - (150.0f / 2.0f));
+
+				if (ImGui::Button("Regenerate##Col", ImVec2(150, 50))) {
+
+					if (imfVec[selectedImFVec[0]].iof == iofImage) {
+						im1col.ColorMethod(imfVec[selectedImFVec[0]].im);
+					}
+					else if (imfVec[selectedImFVec[0]].iof == iofFolder) {
+						im1col.ColorMethod(imfVec[selectedImFVec[0]].f.images[0]);
+					}
+				}
+
+				ImGui::PopStyleColor(4);
+				imFo->Scale = 1.f; ImGui::PopFont();
+				ImGui::NewLine();*/
+
+				RegularModify::CursorPos(20); ImGui::Text("Color modificatin type: "); ImGui::NewLine();
+				RegularModify::CursorPos(20);
+
+				char* segedColorRadioNames[] = { "Null","GreyScale","Invert" };
+				int segedColorType = im1col.imctype;
+				for (int i = 0; i < sizeof(segedColorRadioNames) / sizeof(char*); i++) {
+					ImGui::SameLine();
+					if (ImGui::RadioButton(segedColorRadioNames[i], &segedColorType, i)) {
+						im1col.imctype = segedColorType;
+						if (imfVec[selectedImFVec[0]].iof == iofImage) {
+							im1col.ColorMethod(imfVec[selectedImFVec[0]].im);
+						}
+						else if (imfVec[selectedImFVec[0]].iof == iofFolder) {
+							im1col.ColorMethod(imfVec[selectedImFVec[0]].f.images[0]);
+						}
+					}
+				}
+
+			}
+			ImGui::EndChild();
+			ImGui::NewLine();
+
+			//--------button
+
+			ImGui::BeginChild("Buttons_Color", ImVec2(max(im1col.imOut.getSurface()->w, 400), 80)); {
+
+				ImGui::NewLine();
+
+				RegularModify::CursorPos(20);
+
+				imFo->Scale = 1.3f;
+				ImGui::PushFont(imFo);
+
+				PushStyleColorGreenButton();
+
+				if (ImGui::Button("Load##Color", ImVec2(150, 50))) {
+
+					//image
+					if (selectedImFVec.size() == 1 && imfVec[selectedImFVec[0]].iof == iofImage) {
+
+						SDL_Surface* source = im1col.imOut.getSurface();
+						SDL_Surface* destination = SDL_CreateRGBSurfaceWithFormat(0,
+							source->w, source->h, source->format->BitsPerPixel, source->format->format);
+						if (destination != nullptr) {
+							SDL_BlitSurface(source, nullptr, destination, nullptr);
+						}
+						Image imseged;
+						imseged.setSurface(destination);
+						imseged.textureFromSurface();
+
+						ImageFolder imfseged;
+						imfseged.iof = iofImage;
+						imfseged.im = imseged;
+
+						imfVec.push_back(imfseged);
+
+						StoredOperaionsClass s;
+						storedOperationsVector.push_back(s);
+
+					}
+
+					//folder
+					else {
+						Folder segedFolder;
+						StoredOperaionsClass segedStoredOperationsClass;
+						int offset = 0;
+						for (int i = 0; i < selectedImFVec.size(); i++) {
+							if (imfVec[selectedImFVec[i]].iof == iofImage) {
+								segedFolder.Append(imfVec[selectedImFVec[i]].im);
+								offset++;
+							}
+							else if (imfVec[selectedImFVec[i]].iof == iofFolder) {
+								segedFolder.Append(imfVec[selectedImFVec[i]].f);
+								//segedStoredOperationsClass += storedOperationsVector[i];
+
+								for (int j = 0; j < storedOperationsVector[i].storedOperationsElement.size(); j++) {
+									segedStoredOperationsClass.storedOperationsElement.push_back(storedOperationsVector[i].storedOperationsElement[j]);
+
+									for (int k = 0; k < storedOperationsVector[i].storedOperationsElement[j].affectedElements.size(); k++) {
+										segedStoredOperationsClass.storedOperationsElement[j].affectedElements[k] += offset;
+									}
+								}
+								offset += imfVec[selectedImFVec[i]].f.images.size();
+							}
+						}
+
+						SDL_Surface* source = im1col.imOut.getSurface();
+						SDL_Surface* destination = SDL_CreateRGBSurfaceWithFormat(0,
+							source->w, source->h, source->format->BitsPerPixel, source->format->format);
+						if (destination != nullptr) {
+							SDL_BlitSurface(source, nullptr, destination, nullptr);
+						}
+						Image imseged;
+						imseged.setSurface(destination);
+						imseged.textureFromSurface();
+						segedFolder.images[0] = imseged;
+						segedFolder.createIconImageFromImages();
+
+						StoredOperaionsClass::storedOperation segedOp;
+						segedOp.ote = StoredOperaionsClass::oteImage1Color;
+						segedOp.i1c = im1col;
+						for (int i = 0; i < segedFolder.images.size(); i++) {
+							segedOp.affectedElements.push_back(i);
+						}
+						segedStoredOperationsClass.storedOperationsElement.push_back(segedOp);
+						storedOperationsVector.push_back(segedStoredOperationsClass);
+
+						ImageFolder imfseged;
+						imfseged.iof = iofFolder;
+						imfseged.f = segedFolder;
+
+						imfVec.push_back(imfseged);
+
+					}					
+				}
+
+				ImGui::PopStyleColor(3);
+
+				ImGui::SameLine(); RegularModify::CursorPos(max(400 - 170, im1col.imOut.getSurface()->w - 170));
+				Back();
+
+				imFo->Scale = 1.f;
+				ImGui::PopFont();
+			}
+			ImGui::EndChild();
+
+			ImGui::PopStyleVar(2); ImGui::PopStyleColor(6);
+
+			break;
+		}
+
 		case CMyApp::SAVEENUM: //-----------------------------------------------------------------------------------------------
 		{
 			SetBasicUI();
 			ImGui::PushStyleColor(ImGuiCol_FrameBg, Colors[ColorEnum::INPUT_BG]);
 
-			ImGui::BeginChild("Name2", ImVec2(max(imfVec[selectedImFVec[0]].iof == iofImage ? imfVec[selectedImFVec[0]].im.getSurface()->w : imfVec[selectedImFVec[0]].f.images[0].getSurface()->w, 360), 65), false);
+			ImGui::BeginChild("Name_Save", ImVec2(max(imfVec[selectedImFVec[0]].iof == iofImage ? imfVec[selectedImFVec[0]].im.getSurface()->w : imfVec[selectedImFVec[0]].f.images[0].getSurface()->w, 400), 65), false); {
 
 				imFo->Scale = 1.5f;	ImGui::PushFont(imFo);
 				ImGui::NewLine(); RegularModify::CursorPos(20); ImGui::Text("Save");
 				imFo->Scale = 1.f;	ImGui::PopFont();
-
+			}
 			ImGui::EndChild();
 
 			ImGui::NewLine();
@@ -796,24 +1436,24 @@ void CMyApp::Render()
 			}
 			ImGui::NewLine();
 
-			ImGui::BeginChild("Save", ImVec2(max(imfVec[selectedImFVec[0]].iof==iofImage ? imfVec[selectedImFVec[0]].im.getSurface()->w : imfVec[selectedImFVec[0]].f.images[0].getSurface()->w, 360), 75), false);
+			ImGui::BeginChild("Values_Save", ImVec2(max(imfVec[selectedImFVec[0]].iof == iofImage ? imfVec[selectedImFVec[0]].im.getSurface()->w : imfVec[selectedImFVec[0]].f.images[0].getSurface()->w, 400), 75), false); {
 
 				ImGui::NewLine();
 				RegularModify::CursorPos(20); ImGui::Text("Path:");
-				ImGui::PushItemWidth(max(imfVec[selectedImFVec[0]].iof == iofImage ? imfVec[selectedImFVec[0]].im.getSurface()->w -40 : imfVec[selectedImFVec[0]].f.images[0].getSurface()->w - 40, 260));
+				ImGui::PushItemWidth(max(imfVec[selectedImFVec[0]].iof == iofImage ? imfVec[selectedImFVec[0]].im.getSurface()->w - 40 : imfVec[selectedImFVec[0]].f.images[0].getSurface()->w - 40, 360));
 				RegularModify::CursorPos(20); ImGui::InputText("##SavePath", outstr, IM_ARRAYSIZE(outstr));
 				ImGui::PopItemWidth();
-				if (currentErrors[1]) {
+				/*if (currentErrors[1]) {
 					ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(255, 0, 0, 255));
 					RegularModify::CursorPos(20); ImGui::Text("Incorrect path");
 					ImGui::PopStyleColor();
-				}
-
+				}*/
+			}
 			ImGui::EndChild();
 
 			ImGui::NewLine();
 
-			ImGui::BeginChild("EndButtons_2", ImVec2(max(imfVec[selectedImFVec[0]].iof == iofImage ? imfVec[selectedImFVec[0]].im.getSurface()->w : imfVec[selectedImFVec[0]].f.images[0].getSurface()->w, 360), 80));
+			ImGui::BeginChild("Buttons_Save", ImVec2(max(imfVec[selectedImFVec[0]].iof == iofImage ? imfVec[selectedImFVec[0]].im.getSurface()->w : imfVec[selectedImFVec[0]].f.images[0].getSurface()->w, 400), 80)); {
 
 				ImGui::NewLine();
 				RegularModify::CursorPos(20);
@@ -825,31 +1465,29 @@ void CMyApp::Render()
 				if (ImGui::Button("Save", ImVec2(150, 50))) {
 
 					struct stat sb;
-					//incorrect path (there isn't a file with this name already)
+					//available path (there isn't a file with this name already)
 					if (stat(outstr, &sb) != 0) {
 						if (selectedImFVec.size() == 1 && imfVec[selectedImFVec[0]].iof == iofImage) {
 							if (IMG_SavePNG(imfVec[selectedImFVec[0]].im.getSurface(), outstr) == 0) {
 								if (stat(outstr, &sb) == 0) { //check, might not needed
 									currentImageEnum = SEMMIENUM;
-									currentErrors[1] = false;
-									ImGui::OpenPopup("Mentes##Pop");
 								}
 								else {
-									currentErrors[1] = true;
+									ImGui::OpenPopup("Save##Error");
 								}
 							}
 							else {
-								currentErrors[1] = true;
+								ImGui::OpenPopup("Save##Error");
 							}
 						}
 						else {
-							currentErrors[1] = true;
+							ImGui::OpenPopup("Save##InvalidPath");
 						}
 					}
 					//folder path  !!!!!!!!!!!!!!!!!!!!!!!!!!check if name isnt already taken
 					else if (sb.st_mode & S_IFDIR) {
 						if (selectedImFVec.size() == 1 && imfVec[selectedImFVec[0]].iof == iofImage) {
-							currentErrors[1] = true;
+							ImGui::OpenPopup("Save##InvalidPath");
 						}
 						else {
 							int n = 1;
@@ -878,7 +1516,7 @@ void CMyApp::Render()
 										//----------------------------------------------------------
 
 										//im1sav.setImage(imfVec[selectedImFVec[i]].f.images[j]);
-										im1sav.SaveFolder(imfVec[selectedImFVec[i]].f, cstr,j,storedOperationsVector[selectedImFVec[i]]);
+										im1sav.SaveFolder(imfVec[selectedImFVec[i]].f, cstr, j, storedOperationsVector[selectedImFVec[i]]);
 
 										//freeup imseged
 
@@ -891,29 +1529,46 @@ void CMyApp::Render()
 								}
 							}
 							currentImageEnum = SEMMIENUM;
-							currentErrors[1] = false;
-
-							ImGui::OpenPopup("Mentes##Pop");
 						}
 					}
 					//already existing image path
 					else {
-						currentErrors[1] = true;
+						ImGui::OpenPopup("Save##ImageOverritePath");
 					}
 				}
 
-				ImGui::SameLine(); RegularModify::CursorPos(max(170, imfVec[selectedImFVec[0]].iof == iofImage ? imfVec[selectedImFVec[0]].im.getSurface()->w -170 : imfVec[selectedImFVec[0]].f.images[0].getSurface()->w - 170));
+				ImGui::SameLine(); RegularModify::CursorPos(max(400 - 170, imfVec[selectedImFVec[0]].iof == iofImage ? imfVec[selectedImFVec[0]].im.getSurface()->w - 170 : imfVec[selectedImFVec[0]].f.images[0].getSurface()->w - 170));
 				Back();
 
 				imFo->Scale = 1.f; ImGui::PopFont();
 				ImGui::PopStyleColor(3);
 
+				if (ImGui::BeginPopupModal("Save##InvalidPath", NULL, ImGuiWindowFlags_AlwaysAutoResize))
+				{
+					ImGui::Text("Invalid path.");
+					if (ImGui::Button("OK", ImVec2(120, 0))) { ImGui::CloseCurrentPopup(); }
+					ImGui::EndPopup();
+				}
+				if (ImGui::BeginPopupModal("Save##ImageOverritePath", NULL, ImGuiWindowFlags_AlwaysAutoResize))
+				{
+					ImGui::Text("A file already exist with this name.");
+					if (ImGui::Button("OK", ImVec2(120, 0))) { ImGui::CloseCurrentPopup(); }
+					ImGui::EndPopup();
+				}
+				if (ImGui::BeginPopupModal("Save##Error", NULL, ImGuiWindowFlags_AlwaysAutoResize))
+				{
+					ImGui::Text("An error occured while saving.");
+					if (ImGui::Button("OK", ImVec2(120, 0))) { ImGui::CloseCurrentPopup(); }
+					ImGui::EndPopup();
+				}
+			}
 			ImGui::EndChild();
 
 			ImGui::PopStyleVar(2); ImGui::PopStyleColor(6);
 
 			break;
 		}
+
 		case CMyApp::SSIMENUM: //-------------------------------------------------------------------------------------------------------
 		{
 			SetBasicUI();
@@ -922,13 +1577,13 @@ void CMyApp::Render()
 			ImGui::PushStyleColor(ImGuiCol_ButtonHovered, Colors[ColorEnum::BUTTON_BLUE_HOVERED]);
 			ImGui::PushStyleColor(ImGuiCol_ButtonActive, Colors[ColorEnum::BUTTON_BLUE_ACTIVE]);
 
-			ImGui::BeginChild("Name3", ImVec2(max(im2ssim.imOut.getSurface()->w, 360), 65), false);
+			ImGui::BeginChild("Name_SSIM", ImVec2(max(im2ssim.imOut.getSurface()->w, 400), 65), false); {
 
 				imFo->Scale = 1.5f;	ImGui::PushFont(imFo);
 				ImGui::NewLine();
 				RegularModify::CursorPos(20); ImGui::Text("SSIM");
 				imFo->Scale = 1.f;	ImGui::PopFont();
-
+			}
 			ImGui::EndChild();
 			ImGui::NewLine();
 
@@ -936,7 +1591,7 @@ void CMyApp::Render()
 
 			ImGui::NewLine();
 
-			ImGui::BeginChild("SSIM", ImVec2(max(im2ssim.imOut.getSurface()->w, 360), 210), false);
+			ImGui::BeginChild("Values_SSIM", ImVec2(max(im2ssim.imOut.getSurface()->w, 400), 210), false); {
 
 				ImGui::NewLine();
 				float segedSsimOsszeg = im2ssim.getSsimOsszeg();
@@ -944,24 +1599,24 @@ void CMyApp::Render()
 				RegularModify::ShowHelpMarker("The average value of the SSIM algorithm on the two image.");
 
 				ImGui::NewLine();
-				RegularModify::CursorPos(20); ImGui::Text("SSIM's color: "); ImGui::NewLine();
+				RegularModify::CursorPos(20); ImGui::Text("SSIM's color/style: "); ImGui::NewLine();
 				RegularModify::CursorPos(20);
 
-				char* segedSsimRadioNames[] = {"Black-White","Blue","Green","Red","All color","Heatmap"};
+				char* segedSsimRadioNames[] = { "Black-White","Blue","Green","Red","All color","Heatmap" };
 				int segedSsimColor = im2ssim.getSsimColor();
-				for (int i = 0; i < sizeof(segedSsimRadioNames)/sizeof(char*); i++) {
+				for (int i = 0; i < sizeof(segedSsimRadioNames) / sizeof(char*); i++) {
 					ImGui::SameLine();
 					if (ImGui::RadioButton(segedSsimRadioNames[i], &segedSsimColor, i)) {
 						im2ssim.setSsimColor(segedSsimColor);
 					}
 				}
 
-				RegularModify::ShowHelpMarker("Here you can select the color/style of the SSIM.");
+				//RegularModify::ShowHelpMarker("Here you can select the color/style of the SSIM.");
 
 				ImGui::NewLine();
 				RegularModify::CursorPos(20); ImGui::Text("The size of the SSIM slices:");
 				ImGui::SameLine();
-				RegularModify::CursorPos(220);
+				RegularModify::CursorPos(max(im2ssim.imOut.getSurface()->w, 400) - 120);
 				ImGui::PushItemWidth(80);
 				int segedSsimSize = im2ssim.getSsimSize();
 				if (ImGui::InputInt("##Size", &segedSsimSize, 0)) {
@@ -974,16 +1629,16 @@ void CMyApp::Render()
 
 					im2ssim.setSsimSize(segedSsimSize);
 				}
-				RegularModify::ShowHelpMarker("What times what should be the size of the slices that the SSIM algorithm uses");
+				RegularModify::ShowHelpMarker("What should be the size of the slices that the SSIM algorithm uses");
 
 				ImGui::NewLine();
 				ImGui::PopItemWidth();
 
 				ImGui::PushStyleColor(ImGuiCol_Text, Colors[ColorEnum::TEXT_LIGHT]);
-				RegularModify::CursorPos((im2ssim.imOut.getSurface()->w / 2.0f) - (150.0f / 2.0f));
+				RegularModify::CursorPos((max(im2ssim.imOut.getSurface()->w, 400) / 2.0f) - (150.0f / 2.0f));
 				imFo->Scale = 1.3f;
 				ImGui::PushFont(imFo);
-				if (ImGui::Button("Regenerate", ImVec2(150, 50))) {
+				if (ImGui::Button("Regenerate##SSIM", ImVec2(150, 50))) {
 					if (imfVec[selectedImFVec[0]].iof == iofImage) {
 						if (imfVec[selectedImFVec[1]].iof == iofImage) {
 							im2ssim.SSIMSurface(imfVec[selectedImFVec[0]].im, imfVec[selectedImFVec[1]].im);
@@ -1004,14 +1659,14 @@ void CMyApp::Render()
 				imFo->Scale = 1.f;
 				ImGui::PopStyleColor();
 				ImGui::PopFont();
-
+			}
 			ImGui::EndChild();
 
 			ImGui::NewLine();
 
 			//--------button
 
-			ImGui::BeginChild("EndButtons_3", ImVec2(max(im2ssim.imOut.getSurface()->w, 360), 80));
+			ImGui::BeginChild("Buttons_SSIM", ImVec2(max(im2ssim.imOut.getSurface()->w, 400), 80)); {
 				ImGui::NewLine();
 				RegularModify::CursorPos(20);
 
@@ -1020,7 +1675,7 @@ void CMyApp::Render()
 				imFo->Scale = 1.3f;
 				ImGui::PushFont(imFo);
 
-				if (ImGui::Button("Load##stradd", ImVec2(150, 50))) {
+				if (ImGui::Button("Load##SSIM", ImVec2(150, 50))) {
 
 					//images
 					if (imfVec[selectedImFVec[0]].iof == iofImage && imfVec[selectedImFVec[1]].iof == iofImage) {
@@ -1056,7 +1711,7 @@ void CMyApp::Render()
 							segedFolder.Append(imfVec[selectedImFVec[0]].f);
 							segedStoredOperationsClass = storedOperationsVector[selectedImFVec[0]];
 						}
-						else if(imfVec[selectedImFVec[0]].iof == iofImage){
+						else if (imfVec[selectedImFVec[0]].iof == iofImage) {
 							segedFolder.Append(imfVec[selectedImFVec[1]].f);
 							segedStoredOperationsClass = storedOperationsVector[selectedImFVec[1]];
 						}
@@ -1094,13 +1749,13 @@ void CMyApp::Render()
 							ImageFolder segedimf;
 							segedimf.iof == iofFolder;
 							//do folders operations !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-							
+
 							segedimf.f = imfVec[selectedImFVec[1]].f;
 							im2ssim.setImageFolder(segedimf);
 
 							//im2ssim.ifFoldthanOperationsNo = selectedImFVec[1];
 						}
-						
+
 						StoredOperaionsClass::storedOperation segedOp;
 						segedOp.ote = StoredOperaionsClass::oteImage2SSIM;
 						segedOp.i2s = im2ssim;
@@ -1117,34 +1772,33 @@ void CMyApp::Render()
 						imfVec.push_back(imfseged);
 
 					}
-
-					ImGui::OpenPopup("Betoltes##Pop");
 				}
 
-				ImGui::SameLine(); RegularModify::CursorPos(max(170, im2ssim.imOut.getSurface()->w - 170));
+				ImGui::SameLine(); RegularModify::CursorPos(max(400 - 170, im2ssim.imOut.getSurface()->w - 170));
 				Back();
 
 				imFo->Scale = 1.f;
 				ImGui::PopFont();
 				ImGui::PopStyleColor(3);
-
+			}
 			ImGui::EndChild();
 
 			ImGui::PopStyleVar(2); ImGui::PopStyleColor(9);
 
 			break;
 		}
+
 		case CMyApp::MERGEENUM: //-----------------------------------------------------------------------------------------------------
 		{
 			SetBasicUI();
 			ImGui::PushStyleColor(ImGuiCol_FrameBg, Colors[ColorEnum::INPUT_BG]);
 			
-			ImGui::BeginChild("Name4", ImVec2(max(im2merge.imOut.getSurface()->w, 360), 65), false);
+			ImGui::BeginChild("Name_Merge", ImVec2(max(im2merge.imOut.getSurface()->w, 400), 65), false); {
 
 				imFo->Scale = 1.5f;	ImGui::PushFont(imFo);
 				ImGui::NewLine(); RegularModify::CursorPos(20); ImGui::Text("Merge");
 				imFo->Scale = 1.f;	ImGui::PopFont();
-
+			}
 			ImGui::EndChild();
 
 			ImGui::NewLine();
@@ -1176,37 +1830,37 @@ void CMyApp::Render()
 
 			ImGui::NewLine();
 
-			ImGui::BeginChild("Merge", ImVec2(max(im2merge.imOut.getSurface()->w, 360), 70), false);
+			ImGui::BeginChild("Values_Merge", ImVec2(max(im2merge.imOut.getSurface()->w, 400), 70), false); {
 
-			ImGui::NewLine();
-			RegularModify::CursorPos(20); ImGui::Text("The slope of the transition:");
-			ImGui::SameLine();
-			RegularModify::CursorPos(200);
-			ImGui::PushItemWidth(max(im2merge.imOut.getSurface()->w, 360) - 220);
-			float segedSlope = im2merge.getSlope();
-			if (ImGui::SliderFloat("##slope", &segedSlope, 0.0f, 360.0f, "%.4f")) {
-				im2merge.setSlope(segedSlope);
-				im2merge.plotLineMerge(im2merge.getUx(), im2merge.getUy(), *im1, *im2);
-			}
-			RegularModify::CursorPos(200);
-			if (ImGui::InputFloat("##slope2", &segedSlope, 0)) {
-				if (segedSlope < 0.0f) {
-					segedSlope = 0.0f;
+				ImGui::NewLine();
+				RegularModify::CursorPos(20); ImGui::Text("The slope of the transition:");
+				ImGui::SameLine();
+				RegularModify::CursorPos(200);
+				ImGui::PushItemWidth(max(im2merge.imOut.getSurface()->w, 400) - 220);
+				float segedSlope = im2merge.getSlope();
+				if (ImGui::SliderFloat("##slope", &segedSlope, 0.0f, 360.0f, "%.4f")) {
+					im2merge.setSlope(segedSlope);
+					im2merge.plotLineMerge(im2merge.getUx(), im2merge.getUy(), *im1, *im2);
 				}
-				if (segedSlope > 360.0f) {
-					segedSlope = 360.0f;
+				RegularModify::CursorPos(200);
+				if (ImGui::InputFloat("##slope2", &segedSlope, 0)) {
+					if (segedSlope < 0.0f) {
+						segedSlope = 0.0f;
+					}
+					if (segedSlope > 360.0f) {
+						segedSlope = 360.0f;
+					}
+					im2merge.setSlope(segedSlope);
+					im2merge.plotLineMerge(im2merge.getUx(), im2merge.getUy(), *im1, *im2);
 				}
-				im2merge.setSlope(segedSlope);
-				im2merge.plotLineMerge(im2merge.getUx(), im2merge.getUy(), *im1, *im2);
+				ImGui::PopItemWidth();
 			}
-			ImGui::PopItemWidth();
-
 			ImGui::EndChild();
 			ImGui::NewLine();
 
 			//--------button
 
-			ImGui::BeginChild("EndButtons_4", ImVec2(max(im2merge.imOut.getSurface()->w, 360), 80));
+			ImGui::BeginChild("Buttons_Merge", ImVec2(max(im2merge.imOut.getSurface()->w, 400), 80)); {
 				ImGui::NewLine();
 				RegularModify::CursorPos(20);
 
@@ -1214,7 +1868,7 @@ void CMyApp::Render()
 
 				imFo->Scale = 1.3f;
 				ImGui::PushFont(imFo);
-				if (ImGui::Button("Load##stradd", ImVec2(150, 50))) {
+				if (ImGui::Button("Load##Merge", ImVec2(150, 50))) {
 
 					//images
 					if (imfVec[selectedImFVec[0]].iof == iofImage && imfVec[selectedImFVec[1]].iof == iofImage) {
@@ -1312,24 +1966,22 @@ void CMyApp::Render()
 						imfVec.push_back(imfseged);
 
 					}
-
-					ImGui::OpenPopup("Betoltes##Pop");
-				
 				}
 
-				ImGui::SameLine(); RegularModify::CursorPos(max(170, im2merge.imOut.getSurface()->w - 170));
+				ImGui::SameLine(); RegularModify::CursorPos(max(400 - 170, im2merge.imOut.getSurface()->w - 170));
 				Back();
 
 				imFo->Scale = 1.f;
 				ImGui::PopFont();
 				ImGui::PopStyleColor(3);
-
+			}
 			ImGui::EndChild();
 
 			ImGui::PopStyleVar(2); ImGui::PopStyleColor(6);
 
 			break;
 		}
+
 		default:
 		{
 			break;
@@ -1337,6 +1989,13 @@ void CMyApp::Render()
 	}
 
 	ImGui::NewLine();
+
+	if (ImGui::BeginPopupModal("Load##Pop", NULL, ImGuiWindowFlags_AlwaysAutoResize))
+	{
+		ImGui::Text("The image has been loaded.");
+		if (ImGui::Button("OK", ImVec2(120, 0))) { ImGui::CloseCurrentPopup(); }
+		ImGui::EndPopup();
+	}
 
 	if (ImGui::BeginPopupModal("Betoltes##Pop", NULL, ImGuiWindowFlags_AlwaysAutoResize))
 	{
@@ -1364,8 +2023,6 @@ void CMyApp::Back() {
 	ImGui::PushStyleColor(ImGuiCol_ButtonActive, Colors[ColorEnum::BUTTON_RED_ACTIVE]);
 	if (ImGui::Button("Back", ImVec2(150, 50))) {
 		currentImageEnum = SEMMIENUM;
-		currentErrors[0] = false;
-		currentErrors[1] = false;
 	}
 	ImGui::PopStyleColor(3);
 	imFo->Scale = 1.f;
@@ -1459,17 +2116,6 @@ void Image::editableDrawImage() {
 	ImGui::Image((void*)(intptr_t)texture, ImVec2(surface->w, surface->h));
 }
 
-Image0FromFile::Image0FromFile(void) {
-	loadType = loadTypeEnum::PICTURE;
-}
-
-Image Image0FromFile::Load(char* s) {
-	Image im;
-	im.setSurface(IMG_Load(s));
-	im.textureFromSurface();
-	return im;
-}
-
 Folder::Folder(void){}
 
 bool Folder::Load(char* s) {
@@ -1511,6 +2157,54 @@ void Folder::createIconImageFromImages() {
 		}
 	}
 	textureFromSurface();
+}
+
+Image0FromFile::Image0FromFile(void) {
+	loadType = loadTypeEnum::PICTURE;
+}
+
+Image Image0FromFile::Load(char* s) {
+	Image im;
+	im.setSurface(IMG_Load(s));
+	im.textureFromSurface();
+	return im;
+}
+
+Image0StaticNoise::Image0StaticNoise(void) {
+
+	width = 200;
+	height = 200;
+
+	for (int n = 0; n < IM_ARRAYSIZE(saved_palette); n++)
+		ImGui::ColorConvertHSVtoRGB(n / 31.0f, 0.8f, 0.8f, saved_palette[n].x, saved_palette[n].y, saved_palette[n].z);
+
+	color.push_back(ImColor(255, 255, 255, 255));
+	backup_color.push_back(ImColor(255, 255, 255, 255));
+	color.push_back(ImColor(0, 0, 0, 255));
+	backup_color.push_back(ImColor(0, 0, 0, 255));
+}
+
+void Image0StaticNoise::Reset() {
+	width = 200;
+	height = 200;
+}
+
+void Image0StaticNoise::StaticMethod() {
+	SDL_Surface* surf = SDL_CreateRGBSurfaceWithFormat(0,
+		width, height, 32, SDL_PIXELFORMAT_RGBA32);
+
+	std::random_device rd; // obtain a random number from hardware
+	std::mt19937 gen(rd()); // seed the generator
+	std::uniform_int_distribution<> distr(0, color.size() - 1); // define the range
+
+	for (int i = 0; i < surf->w; i++) {
+		for (int j = 0; j < surf->h; j++) {
+
+			SurfaceModify::PutPixel32(i, j, ImGui::ColorConvertFloat4ToU32(color[distr(gen)]), surf);
+		}
+	}
+	staticnoise.setSurface(surf);
+	staticnoise.textureFromSurface();
 }
 
 Image1::Image1(void) {}
@@ -1711,6 +2405,129 @@ void Image1Magnify::MagnifyMethod(Image im) {
 	imOut.textureFromSurface();
 }
 
+Image1Blur::Image1Blur(void) {
+	blurSize = 2;
+	blurType = 0;
+}
+
+void Image1Blur::Reset() {
+	blurSize = 2;
+	blurType = 0;
+}
+
+void Image1Blur::BlurMethod(Image im) { //if <0 than = 0; if < w
+	if (blurType == 0) {
+		for (int i = 0; i < imOut.getSurface()->w; i+=blurSize) {
+			for (int j = 0; j < imOut.getSurface()->h; j+=blurSize) {
+
+				int rSum=0, gSum=0, bSum=0, aSum=0;
+				int count = 0;
+				for (int x = 0; x < blurSize; x++) {
+					for (int y = 0; y < blurSize; y++) {
+						Uint8 r, g, b, a;
+						SDL_GetRGBA(SurfaceModify::GetColor(x + i, y + j, im.getSurface()), im.getSurface()->format, &r, &g, &b, &a);
+						rSum += r;
+						gSum += g;
+						bSum += b;
+						aSum += a;
+						count++;
+					}
+				}
+				rSum /= count;
+				gSum /= count;
+				bSum /= count;
+				aSum /= count;
+
+				for (int x = 0; x < blurSize; x++) {
+					for (int y = 0; y < blurSize; y++) {
+						Uint32 color = SDL_MapRGBA(imOut.getSurface()->format, rSum, gSum, bSum, aSum);
+						SurfaceModify::PutPixel32(x + i, y + j, color, imOut.getSurface());
+					}
+				}
+			}
+
+			
+		}
+	}
+
+	else if (blurType == 1) {
+
+		for (int i = 0; i < imOut.getSurface()->w; i++) {
+			for (int j = 0; j < imOut.getSurface()->h; j++) {
+				float rSum = 0, gSum = 0, bSum = 0, aSum = 0;
+				float count = 0;
+
+				for (int x = -((blurSize - 1) / 2); x <= ((blurSize - 1) / 2); x++) {
+					for (int y = -((blurSize - 1) / 2); y <= ((blurSize - 1) / 2); y++) {
+
+						float onthepower = -1 * ((x * x + y * y) / (2.0f * blurSize * blurSize));
+						float value = ((1.0f) / (2.0f * M_PI * blurSize * blurSize)) * std::exp(onthepower);
+
+						if (0 < i + x && i + x < imOut.getSurface()->w - 1 && 0 < j + y && j + y < imOut.getSurface()->h - 1) {
+							Uint8 r, g, b, a;
+							SDL_GetRGBA(SurfaceModify::GetColor(i+x, j+y, im.getSurface()), im.getSurface()->format, &r, &g, &b, &a);
+							rSum += r * value;
+							gSum += g * value;
+							bSum += b * value;
+							aSum += a * value;
+							count += value;
+						}
+
+					}
+				}
+				rSum /= count;
+				gSum /= count;
+				bSum /= count;
+				aSum /= count;
+
+				Uint32 color = SDL_MapRGBA(imOut.getSurface()->format, rSum, gSum, bSum, aSum);
+				SurfaceModify::PutPixel32(i, j, color, imOut.getSurface());
+
+			}
+		}
+	}
+
+	imOut.textureFromSurface();
+}
+
+Image1Color::Image1Color(void) {
+	imctype = Null;
+}
+
+void Image1Color::Reset() {
+	imctype = Null;
+}
+
+void Image1Color::ColorMethod(Image im) { //sometimes red line???
+	for (int i = 0; i < imOut.getSurface()->w; i++) {
+		for (int j = 0; j < imOut.getSurface()->h; j++) {
+			switch (imctype) {
+				case Null: {
+					SurfaceModify::PutPixel32(i, j, SurfaceModify::GetColor(i, j, im.getSurface()), imOut.getSurface());
+					break;
+				}
+				case GreyScale: {
+					Uint8 grey8 = RegularModify::greyScale(SurfaceModify::GetColor(i, j, im.getSurface()), im.getSurface()->format);
+					Uint32 grey32 = (grey8 << 0) | (grey8 << 8) | (grey8 << 16) |  (255 << 24);
+					SurfaceModify::PutPixel32(i, j, grey32 , imOut.getSurface());
+					break;
+				}
+				case Inverted: {
+					Uint8 r, g, b, a;
+					SDL_GetRGBA(SurfaceModify::GetColor(i, j, im.getSurface()), im.getSurface()->format, &r, &g, &b, &a);
+					r = 255 - r;
+					g = 255 - g;
+					b = 255 - b;
+					Uint32 grey32 = (r << 0) | (g << 8) | (b << 16) | (a << 24);
+					SurfaceModify::PutPixel32(i, j, grey32, imOut.getSurface());
+					break;
+				}
+			}
+		}
+	}
+	imOut.textureFromSurface();
+}
+
 void Image1Save::SaveFolder(Folder f, char* cstr, int j, StoredOperaionsClass storedOperationsVector) { //todo: get every image here in here
 	SDL_Surface* source = f.images[j].getSurface();
 	SDL_Surface* destination = SDL_CreateRGBSurfaceWithFormat(0,
@@ -1736,6 +2553,22 @@ void Image1Save::SaveFolder(Folder f, char* cstr, int j, StoredOperaionsClass st
 						else {
 							//error
 						}
+						break;
+					}
+					case StoredOperaionsClass::oteImage1Blur: {
+
+						storedOperationsVector.storedOperationsElement[k].i1b.setImage(imOut);
+						storedOperationsVector.storedOperationsElement[k].i1b.BlurMethod(imOut);
+						imOut = storedOperationsVector.storedOperationsElement[k].i1b.imOut;
+
+						break;
+					}
+					case StoredOperaionsClass::oteImage1Color: {
+
+						storedOperationsVector.storedOperationsElement[k].i1c.setImage(imOut);
+						storedOperationsVector.storedOperationsElement[k].i1c.ColorMethod(imOut);
+						imOut = storedOperationsVector.storedOperationsElement[k].i1c.imOut;
+
 						break;
 					}
 					case StoredOperaionsClass::oteImage2SSIM: {
@@ -1998,7 +2831,8 @@ void Image2SSIM::SSIMSurface(Image im1, Image im2) {
 				for (int j = 0; j < ssimSize; j++) {
 					if (x + i < imOut.getSurface()->w && y + j < imOut.getSurface()->h) {
 
-						SurfaceModify::PutPixel32(x + i, y + j, SDL_MapRGBA(imOut.getSurface()->format, (putColor >> 24) & 0xFF, (putColor >> 16) & 0xFF, (putColor >> 8) & 0xFF, 255 /*alpha1[i][j] + alpha2[i][j]) / 2*/), imOut.getSurface()); //alpha?
+						Uint32 color = SDL_MapRGBA(imOut.getSurface()->format, (putColor >> 24) & 0xFF, (putColor >> 16) & 0xFF, (putColor >> 8) & 0xFF, 255 /*alpha1[i][j] + alpha2[i][j]) / 2*/);
+						SurfaceModify::PutPixel32(x + i, y + j, color, imOut.getSurface()); //alpha?
 					}
 				}
 			}
