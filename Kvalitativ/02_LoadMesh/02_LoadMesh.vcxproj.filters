@@ -28,12 +28,6 @@
     <ClCompile Include="MyApp.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Mesh_OGL3.cpp">
-      <Filter>Utils</Filter>
-    </ClCompile>
-    <ClCompile Include="ObjParser_OGL3.cpp">
-      <Filter>Utils</Filter>
-    </ClCompile>
     <ClCompile Include="T:\OGLPack\include\imgui\imgui.cpp">
       <Filter>imgui</Filter>
     </ClCompile>
@@ -52,12 +46,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="GLUtils.hpp">
-      <Filter>Utils</Filter>
-    </ClInclude>
-    <ClInclude Include="Mesh_OGL3.h">
-      <Filter>Utils</Filter>
-    </ClInclude>
-    <ClInclude Include="ObjParser_OGL3.h">
       <Filter>Utils</Filter>
     </ClInclude>
     <ClInclude Include="t:\OGLPack\include\imgui\imgui.h">

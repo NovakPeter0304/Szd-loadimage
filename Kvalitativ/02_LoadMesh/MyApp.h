@@ -31,13 +31,15 @@ protected:
 
 };
 
-class Folder : public Image { //rm from image
+class Folder{ 
 public:
 	Folder(void);
 	//bool Load(char* s);
 	void Append(Image app);
 	void Append(Folder app);
 	void createIconImageFromImages();
+
+	Image icon;
 
 	std::vector<Image> images;
 	int iconN;
@@ -55,7 +57,7 @@ class Image0 : public Operations{
 class Image0FromFile : public Image0 {
 public:
 	Image0FromFile(void);
-	ImageFolder Load(char* s);
+	ImageFolder Load(char* s, bool popup);
 	enum loadTypeEnum { PICTURE, FOLDER };
 
 	int getLoadType() { return loadType; }
@@ -121,7 +123,8 @@ protected:
 	int bigX;
 	int bigY;
 	bool smallChange;
-	bool upd;
+	bool updMove;
+	bool updResize;
 };
 
 class Image1Blur : public Image1 {
@@ -131,8 +134,8 @@ public:
 	void Reset();
 	void BlurMethod(Image im);
 
-	//enum!!!!!!!!!!!!!
-	int blurType;
+	enum blurTypeEnum {blurBox,blurGauss};
+	blurTypeEnum blurType;
 	int blurSize;
 protected:
 };
@@ -226,14 +229,14 @@ public:
 class SurfaceModify {
 public:
 	static void plotLine(int x0, int y0, int x1, int y1, SDL_Surface* sur);
-	static void PutPixel32(int x, int y, Uint32 color, SDL_Surface* sur);
+	static void PutPixel(int x, int y, Uint32 color, SDL_Surface* sur);
 	static Uint32 GetColor(int x, int y, SDL_Surface* sur);
 
 private:
 	static void plotLineMixed(int x0, int y0, int x1, int y1, SDL_Surface* sur);
 	static void plotLineLow(int x0, int y0, int x1, int y1, SDL_Surface* sur);
 	static void plotLineHigh(int x0, int y0, int x1, int y1, SDL_Surface* sur);
-	static void PutPixel32_nolock(int x, int y, Uint32 color, SDL_Surface* sur);
+	static void PutPixel_nolock(int x, int y, Uint32 color, SDL_Surface* sur);
 };
 
 class RegularModify {
@@ -273,6 +276,7 @@ protected:
 	void PushStyleColorGreenButton();
 
 	ImFont* arial;
+	Image arrow_left, arrow_right,arrow_left_unavailable,arrow_right_unavailable;
 
 	std::vector<ImageFolder> imfVec;
 	std::vector<int> selectedImFVec;

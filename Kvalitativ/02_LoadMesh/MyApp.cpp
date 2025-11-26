@@ -2,7 +2,7 @@
 
 #define _CRT_SECURE_NO_WARNINGS
 
-#define IM_F32_TO_INT8_SAT(_VAL)        ((int)(ImSaturate(_VAL) * 255.0f + 0.5f))  
+//#define IM_F32_TO_INT8_SAT(_VAL)        ((int)(ImSaturate(_VAL) * 255.0f + 0.5f))  
 
 #include "MyApp.h"
 #include "GLUtils.hpp"
@@ -15,7 +15,6 @@
 #include <filesystem>
 
 #include <windows.h>
-//#include "CommonFileDialogApp.h"
 
 CMyApp::CMyApp(void)
 {
@@ -41,6 +40,16 @@ CMyApp::CMyApp(void)
 	//notosans = io.Fonts->AddFontFromFileTTF("NOTOSANS.ttf", 12.0f * dpiScale, NULL, ranges.Data);
 	io.FontGlobalScale = 1.0f / dpiScale;
 	io.Fonts->Build();
+	
+	arrow_left = im0load.Load("Arrow_left.png", false).im;
+	arrow_left.textureFromSurface();
+	arrow_right = im0load.Load("Arrow_right.png", false).im;
+	arrow_right.textureFromSurface();
+	arrow_left_unavailable = im0load.Load("Arrow_left_unavailable.png", false).im;
+	arrow_left_unavailable.textureFromSurface();
+	arrow_right_unavailable = im0load.Load("Arrow_right_unavailable.png", false).im;
+	arrow_right_unavailable.textureFromSurface();
+
 }
 
 CMyApp::~CMyApp(void)
@@ -162,7 +171,7 @@ void CMyApp::Render()
 						}
 						case iofFolder: {
 							RegularModify::CursorPos(20 + 315 * i);
-							imfVec[i].f.drawImage(300, std::find(selectedImFVec.begin(), selectedImFVec.end(), i) != selectedImFVec.end());
+							imfVec[i].f.icon.drawImage(300, std::find(selectedImFVec.begin(), selectedImFVec.end(), i) != selectedImFVec.end());
 							break;
 						}
 						default: {
@@ -199,20 +208,37 @@ void CMyApp::Render()
 						}
 						case iofFolder: {
 							RegularModify::CursorPos(20 + 315 * i);
-							if (ImGui::Button(("<-##" + std::to_string(i)).c_str(), ImVec2(147, 50))) {
+							
+							ImGui::PushID(i);
+							if (ImGui::ImageButton(imfVec[i].f.iconN != 0 ? (void*)(intptr_t)arrow_left.getTexture(): (void*)(intptr_t)arrow_left_unavailable.getTexture(), ImVec2(147, 50), ImVec2(0, 0), ImVec2(1, 1))) {
 								if (imfVec[i].f.iconN != 0) {
 									imfVec[i].f.iconN--;
+									if (imfVec[i].f.icon.getSurface() != nullptr) {
+										SDL_FreeSurface(imfVec[i].f.icon.getSurface());
+										imfVec[i].f.icon.setSurface(nullptr);
+									}
+									/*if (texture != 0) {
+										glDeleteTextures(1, &texture);
+										texture = 0;
+									}*/
 									imfVec[i].f.createIconImageFromImages();
 								}
 							}
+							ImGui::PopID();
 							ImGui::SameLine();
 							//RegularModify::CursorPos(ImGui::GetCursorPosX() + 20);
-							if (ImGui::Button(("->##"+ std::to_string(i)).c_str(), ImVec2(147, 50))) {
+							ImGui::PushID(i);
+							if (ImGui::ImageButton((imfVec[i].f.iconN != imfVec[i].f.images.size() - 1)? (void*)(intptr_t)arrow_right.getTexture(): (void*)(intptr_t)arrow_right_unavailable.getTexture(), ImVec2(147, 50), ImVec2(0, 0), ImVec2(1, 1))) {
 								if (imfVec[i].f.iconN != imfVec[i].f.images.size()-1) {
 									imfVec[i].f.iconN++;
+									if (imfVec[i].f.icon.getSurface() != nullptr) {
+										SDL_FreeSurface(imfVec[i].f.icon.getSurface());
+										imfVec[i].f.icon.setSurface(nullptr);
+									}
 									imfVec[i].f.createIconImageFromImages();
 								}
 							}
+							ImGui::PopID();
 							//ImGui::SameLine();
 							//imfVec[i].f.drawImage(300, std::find(selectedImFVec.begin(), selectedImFVec.end(), i) != selectedImFVec.end());
 							break;
@@ -245,7 +271,6 @@ void CMyApp::Render()
 	{
 	case CMyApp::OPERATIONSENUM: //--------------------------------------------------------------------------------------------------
 	{
-		if (selectedImFVec.size() > 0) {
 
 			ImGui::PushStyleColor(ImGuiCol_Header, Colors[ColorEnum::HEADER]);
 			ImGui::PushStyleColor(ImGuiCol_HeaderHovered, Colors[ColorEnum::HEADER_HOVERED]);
@@ -255,30 +280,31 @@ void CMyApp::Render()
 			if (ImGui::CollapsingHeader("Selected images in full size", ImGuiTreeNodeFlags_DefaultOpen)) {
 
 				RegularModify::CursorPos(20);
-				for (int i = 0; i < selectedImFVec.size(); i++) {
+				if (selectedImFVec.size() > 0) {
+					for (int i = 0; i < selectedImFVec.size(); i++) {
 
-					switch (imfVec[selectedImFVec[i]].iof) {
-					case iofImage: {
-						imfVec[selectedImFVec[i]].im.drawImage();
-						break;
-					}
-					case iofFolder: {
-						imfVec[selectedImFVec[i]].f.drawImage();
-						break;
-					}
-					default: {
-						break;
-					}
-					}
+						switch (imfVec[selectedImFVec[i]].iof) {
+							case iofImage: {
+								imfVec[selectedImFVec[i]].im.drawImage();
+								break;
+							}
+							case iofFolder: {
+								imfVec[selectedImFVec[i]].f.icon.drawImage();
+								break;
+							}
+							default: {
+								break;
+							}
+						}
 
-					ImGui::SameLine();
+						ImGui::SameLine();
+					}
+					ImGui::NewLine(); ImGui::NewLine();
 				}
-				ImGui::NewLine(); ImGui::NewLine();
 			}
 			ImGui::PopStyleColor(4);
 
-			ImGui::NewLine(); ImGui::NewLine();
-		}
+			ImGui::NewLine();ImGui::NewLine();
 
 
 
@@ -539,7 +565,7 @@ void CMyApp::Render()
 				ImGui::PushFont(imFo); RegularModify::CursorPos(20);
 				if (ImGui::Button("Load##Load", ImVec2(150, 50))) {
 
-					ImageFolder loadImFolder = im0load.Load(stradd);
+					ImageFolder loadImFolder = im0load.Load(stradd,true);
 					if (loadImFolder.iof != iofEmpty) {
 						imfVec.push_back(loadImFolder);
 						//StoredOperaionsClass s;
@@ -633,8 +659,11 @@ void CMyApp::Render()
 				ImGui::PushItemWidth(fmax(im0stat.staticnoise.getSurface()->w, 400) - 290);
 				int segedim0statwidth = im0stat.width;
 				if (ImGui::InputInt("##staticnoideWidth", &segedim0statwidth, 0)) {
-					if (segedim0statwidth > 0) {
+					if (segedim0statwidth > 10) {
 						im0stat.width = segedim0statwidth;
+					}
+					else {
+						im0stat.width = 10;
 					}
 				}
 				ImGui::PopItemWidth();
@@ -645,8 +674,11 @@ void CMyApp::Render()
 				ImGui::PushItemWidth(fmax(im0stat.staticnoise.getSurface()->w, 400) - 290);
 				int segedim0statheight = im0stat.height;
 				if (ImGui::InputInt("##staticnoideHeight", &segedim0statheight, 0)) {
-					if (segedim0statheight > 0) {
+					if (segedim0statheight > 10) {
 						im0stat.height = segedim0statheight;
+					}
+					else {
+						im0stat.height = 10;
 					}
 				}
 				ImGui::PopItemWidth();
@@ -784,6 +816,7 @@ void CMyApp::Render()
 
 			ImGui::NewLine();
 
+			/*
 			ImGui::BeginChild("Values_Magnify", ImVec2(max(im1mag.imOut.getSurface()->w, 400), 180), false); {
 
 				/*imFo->Scale = 1.3f;
@@ -832,7 +865,7 @@ void CMyApp::Render()
 				RegularModify::ShowHelpMarker("When selected, you can adjust the position of the magnified area.");
 				*/
 
-				ImGui::NewLine();
+			/*	ImGui::NewLine();
 
 				RegularModify::CursorPos(20); ImGui::Text("Width:");
 				ImGui::SameLine();
@@ -901,8 +934,8 @@ void CMyApp::Render()
 
 				ImGui::PopItemWidth();
 			}
-			ImGui::EndChild();
-			ImGui::NewLine();
+			ImGui::EndChild(); */
+			//ImGui::NewLine();
 
 			//--------button
 
@@ -1095,12 +1128,9 @@ void CMyApp::Render()
 				for (int i = 0; i < sizeof(segedBlurRadioNames) / sizeof(char*); i++) {
 					ImGui::SameLine();
 					if (ImGui::RadioButton(segedBlurRadioNames[i], &segedBlurType, i)) {
-						im1blur.blurType = segedBlurType;
-						if (im1blur.blurSize > 9 && im1blur.blurType == 1) {
+						im1blur.blurType = (Image1Blur::blurTypeEnum)segedBlurType;
+						if (im1blur.blurSize > 9 ) {
 							im1blur.blurSize = 9;
-						}
-						if (im1blur.blurType == 1 && im1blur.blurSize % 2 == 0) {
-							im1blur.blurSize--;
 						}
 					}
 				}
@@ -1120,11 +1150,8 @@ void CMyApp::Render()
 						segedBlurSize = fmin(im1blur.imOut.getSurface()->w / 2, im1blur.imOut.getSurface()->h / 2);
 					}
 
-					if (segedBlurSize > 9 && im1blur.blurType == 1) {
+					if (segedBlurSize > 9) {
 						segedBlurSize = 9;
-					}
-					if (segedBlurSize % 2 == 0 && im1blur.blurType == 1) {
-						segedBlurSize--;
 					}
 					im1blur.blurSize = segedBlurSize;
 				}
@@ -2163,7 +2190,7 @@ void CMyApp::TestMethod() {
 	char* white = "White.jpg";
 
 	im0load.setLoadType(Image0FromFile::PICTURE);
-	ImageFolder whiteTest = im0load.Load(white);
+	ImageFolder whiteTest = im0load.Load(white,false);
 
 	if (whiteTest.im.getSurface() != nullptr) {
 		std::cout << "1.1 Success" << std::endl;
@@ -2174,7 +2201,7 @@ void CMyApp::TestMethod() {
 	bool success = true;
 
 	im0load.setLoadType(Image0FromFile::FOLDER);
-	ImageFolder folderTest = im0load.Load(folder);
+	ImageFolder folderTest = im0load.Load(folder,false);
 
 	if (folderTest.f.images.size() == 0) {
 		success == false;
@@ -2194,7 +2221,7 @@ void CMyApp::TestMethod() {
 	char* incorrect = "IncorrectPath.jpg";
 
 	im0load.setLoadType(Image0FromFile::PICTURE);
-	ImageFolder incorrectTest = im0load.Load(incorrect);
+	ImageFolder incorrectTest = im0load.Load(incorrect,false);
 
 	if (incorrectTest.iof == iofEmpty) {
 		std::cout << "1.3 Success" << std::endl;
@@ -2236,7 +2263,7 @@ void CMyApp::TestMethod() {
 
 	//4.1
 	im1blur.blurSize = 5;
-	im1blur.blurType = 0;
+	im1blur.blurType = im1blur.blurBox;
 	im1blur.setImage(staticBlackWhite2);
 	im1blur.BlurMethod(staticBlackWhite2);
 	Uint8 r4, g4, b4;
@@ -2258,7 +2285,7 @@ void CMyApp::TestMethod() {
 
 	//4.2
 	//im1blur.blurSize = 5;
-	im1blur.blurType = 1;
+	im1blur.blurType = im1blur.blurGauss;
 	//im1blur.setImage(staticBlackWhite2);
 	im1blur.BlurMethod(staticBlackWhite2);
 	//Uint8 r4, g4, b4;
@@ -2591,7 +2618,7 @@ void CMyApp::TestMethod() {
 	//7.1
 	char* blackchar = "Black.jpg";
 	im0load.setLoadType(Image0FromFile::PICTURE);
-	ImageFolder blackTest = im0load.Load(blackchar);
+	ImageFolder blackTest = im0load.Load(blackchar,false);
 
 	im2merge.setImage(whiteTest.im);
 	im2merge.setSlope(0);
@@ -2755,24 +2782,24 @@ void Folder::createIconImageFromImages() {
 	if (destination != nullptr) {
 		SDL_BlitSurface(source, nullptr, destination, nullptr);
 	}
-	setSurface(destination);
+	icon.setSurface(destination);
 
-	int border = (getSurface()->w < 40 || getSurface()->h < 40) ? 1 : 20;
-	for (int i = 0; i < getSurface()->w; i++) {
-		for (int j = 0; j < getSurface()->h; j++) {
-			if (i < border || j < border || getSurface()->w - (i + 1) < border || getSurface()->h - (j + 1) < border) {
-				SurfaceModify::PutPixel32(i, j, ((255 << 24) | (0 << 16) | (255 << 8) | 255), getSurface());
+	int border = (icon.getSurface()->w < 40 || icon.getSurface()->h < 40) ? 1 : 20;
+	for (int i = 0; i < icon.getSurface()->w; i++) {
+		for (int j = 0; j < icon.getSurface()->h; j++) {
+			if (i < border || j < border || icon.getSurface()->w - (i + 1) < border || icon.getSurface()->h - (j + 1) < border) {
+				SurfaceModify::PutPixel(i, j, ((255 << 24) | (0 << 16) | (255 << 8) | 255), icon.getSurface());
 			}
 		}
 	}
-	textureFromSurface();
+	icon.textureFromSurface();
 }
 
 Image0FromFile::Image0FromFile(void) {
 	loadType = loadTypeEnum::PICTURE;
 }
 
-ImageFolder Image0FromFile::Load(char* s) {
+ImageFolder Image0FromFile::Load(char* s, bool popup) {
 	ImageFolder imfo;
 	//-----------
 
@@ -2783,18 +2810,18 @@ ImageFolder Image0FromFile::Load(char* s) {
 		if (RegularModify::Verify(s)) {
 			Image sizeVerify;
 			sizeVerify.setSurface(IMG_Load(s));
-			if (sizeVerify.getSurface() != nullptr && sizeVerify.getSurface()->h > 10 && sizeVerify.getSurface()->w > 10) {
+			if (sizeVerify.getSurface() != nullptr && sizeVerify.getSurface()->h >= 10 && sizeVerify.getSurface()->w >= 10) {
 				sizeVerify.textureFromSurface();
 				imfo.im = sizeVerify;
 				imfo.iof = iofImage;
 			}
-			else {
+			else if(popup){
 				ImGui::OpenPopup("Load##InvalidSize");
 			}
 
 		}
-		else {
-			//ImGui::OpenPopup("Load##InvalidPath");  nake popups toggleable!!!!!!!!!
+		else if(popup){
+			ImGui::OpenPopup("Load##InvalidPath");
 		}
 		break;
 	}
@@ -2810,7 +2837,9 @@ ImageFolder Image0FromFile::Load(char* s) {
 		HANDLE hFind = FindFirstFileA(path.c_str(), &ffd);
 
 		if (hFind == INVALID_HANDLE_VALUE) {
-			ImGui::OpenPopup("Load##InvalidPath");
+			if (popup) {
+				ImGui::OpenPopup("Load##InvalidPath");
+			}
 			break;
 		}
 
@@ -2824,10 +2853,10 @@ ImageFolder Image0FromFile::Load(char* s) {
 
 				Image sizeVerify;
 				sizeVerify.setSurface(IMG_Load(cstr));
-				if (sizeVerify.getSurface() != nullptr && sizeVerify.getSurface()->h > 10 && sizeVerify.getSurface()->w > 10) {
+				if (sizeVerify.getSurface() != nullptr && sizeVerify.getSurface()->h >= 10 && sizeVerify.getSurface()->w >= 10) {
 					fold.images.push_back(sizeVerify);
 				}
-				else {
+				else if(popup){
 					ImGui::OpenPopup("Load##FolderInvalidSize");
 				}
 			}
@@ -2836,7 +2865,9 @@ ImageFolder Image0FromFile::Load(char* s) {
 		FindClose(hFind);
 
 		if (fold.images.size() == 0) {
-			ImGui::OpenPopup("Load##EmptyFolder");
+			if (popup) {
+				ImGui::OpenPopup("Load##EmptyFolder");
+			}
 		}
 		else {
 
@@ -2889,7 +2920,7 @@ void Image0StaticNoise::StaticMethod() {
 	for (int i = 0; i < surf->w; i++) {
 		for (int j = 0; j < surf->h; j++) {
 
-			SurfaceModify::PutPixel32(i, j, ImGui::ColorConvertFloat4ToU32(color[distr(gen)]), surf);
+			SurfaceModify::PutPixel(i, j, ImGui::ColorConvertFloat4ToU32(color[distr(gen)]), surf);
 		}
 	}
 	staticnoise.setSurface(surf);
@@ -2939,7 +2970,8 @@ Image1Magnify::Image1Magnify(void){
 	smallChange = true;
 	bigX = 0;
 	bigY = 0;
-	upd = false;
+	updMove = false;
+	updResize = false;
 }
 
 
@@ -2964,7 +2996,8 @@ void Image1Magnify::Reset() {
 	smallChange = true;
 	bigX = 0;
 	bigY = 0;
-	upd = false;
+	updMove = false;
+	updResize = false;
 
 	//MagnifyMethod();
 }
@@ -2978,21 +3011,35 @@ void Image1Magnify::editableDrawImage(Image im) {
 
 	ImGui::Image((void*)(intptr_t)imOut.getTexture(), ImVec2(imOut.getSurface()->w, imOut.getSurface()->h));
 	if (ImGui::IsItemClicked()) {
-		if (io.MousePos.x - pos.x >= (im.getSurface()->w - bigX) - zoomW * zoomTimes && io.MousePos.x - pos.x <= (im.getSurface()->w - bigX) && io.MousePos.y - pos.y >= (im.getSurface()->h - bigY) - zoomH * zoomTimes && io.MousePos.y - pos.y <= (im.getSurface()->h - bigY)) {
+
+		if (sqrt(pow( (io.MousePos.x - pos.x) - ((im.getSurface()->w - bigX)-(zoomTimes*zoomW)), 2) + pow((io.MousePos.y - pos.y) - ((im.getSurface()->h - bigY) - (zoomTimes * zoomH)), 2)) < 20) {
 			smallChange = false;
-			upd = true;
+			updResize = true;
+			updMove = false;
+		}
+		else if(io.MousePos.x - pos.x >= (im.getSurface()->w - bigX) - zoomW * zoomTimes && io.MousePos.x - pos.x <= (im.getSurface()->w - bigX) && io.MousePos.y - pos.y >= (im.getSurface()->h - bigY) - zoomH * zoomTimes && io.MousePos.y - pos.y <= (im.getSurface()->h - bigY)) {
+			smallChange = false;
+			updMove = true;
+			updResize = false;
+		}
+		else if (sqrt(pow((io.MousePos.x - pos.x) - (smallX + zoomW), 2) + pow((io.MousePos.y - pos.y) - (smallY + zoomH), 2)) < 20) {
+			smallChange = true;
+			updResize = true;
+			updMove = false;
 		}
 		else if (io.MousePos.x - pos.x <= smallX + zoomW && io.MousePos.x - pos.x >= smallX && io.MousePos.y - pos.y <= smallY + zoomH && io.MousePos.y - pos.y >= smallY) {
 			smallChange = true;
-			upd = true;
+			updMove = true;
+			updResize = false;
 		}
 		else {
-			upd = false;
+			updMove = false;
+			updResize = false;
 		}
 	}
 	if (ImGui::IsItemHovered() && ImGui::IsMouseDown(0))
 	{
-		if (upd) {
+		if (updMove) {
 
 			MagnifyMethod(im);
 
@@ -3028,6 +3075,39 @@ void Image1Magnify::editableDrawImage(Image im) {
 				bigY = im.getSurface()->h - focus_y;
 			}
 		}
+		else if (updResize) {
+			
+			MagnifyMethod(im);
+
+			if (smallChange) {
+				int segedZoomW = zoomW, segedZoomH = zoomH;
+				segedZoomW = io.MousePos.x - pos.x - smallX;
+				segedZoomH = io.MousePos.y - pos.y - smallY;
+
+				if (segedZoomW < 10) segedZoomW = 10;
+				else if (((float)im.getSurface()->w - (float)bigX) - ((float)segedZoomW * zoomTimes) <= 0) segedZoomW = ((im.getSurface()->w - bigX) / zoomTimes) - 1;
+				//else if (segedZoomW * zoomTimes >= im.getSurface()->w) segedZoomW = (im.getSurface()->w / zoomTimes) - 1;
+
+				if (segedZoomH < 10) segedZoomH = 10;
+				else if (((float)im.getSurface()->h - (float)bigY) - ((float)segedZoomH * zoomTimes) <= 0) segedZoomH = ((im.getSurface()->h - bigY) / zoomTimes) - 1;
+				//else if (segedZoomH * zoomTimes >= im.getSurface()->h) segedZoomH = (im.getSurface()->h / zoomTimes) - 1;
+
+				zoomW = segedZoomW;
+				zoomH = segedZoomH;
+			}
+			else {
+				float segedZoomTimes = zoomTimes;
+				segedZoomTimes = max( ((im.getSurface()->w-bigX)-(io.MousePos.x - pos.x)) /zoomW , ((im.getSurface()->h-bigY)-(io.MousePos.y - pos.y)) / zoomH);
+
+				if (segedZoomTimes < 1) segedZoomTimes = 1;
+
+				if (((float)im.getSurface()->w - (float)bigX) - ((float)zoomW * segedZoomTimes) <= 0) segedZoomTimes = (((float)im.getSurface()->w - (float)bigX) / (float)zoomW) - 0.05f;
+
+				if (((float)im.getSurface()->h - (float)bigY) - ((float)zoomH * segedZoomTimes) <= 0) segedZoomTimes = (((float)im.getSurface()->h - (float)bigY) / (float)zoomH) - 0.05f;
+
+				zoomTimes = segedZoomTimes;
+			}
+		}
 	}
 	/*else {
 		upd = false;
@@ -3045,7 +3125,7 @@ void Image1Magnify::MagnifyMethod(Image im) {
 	//draw bg
 	for (int i = 0; i < imOut.getSurface()->w; i++) {
 		for (int j = 0; j < imOut.getSurface()->h; j++) {
-			SurfaceModify::PutPixel32(i, j, SurfaceModify::GetColor(i, j, im.getSurface()), imOut.getSurface());
+			SurfaceModify::PutPixel(i, j, SurfaceModify::GetColor(i, j, im.getSurface()), imOut.getSurface());
 		}
 	}
 
@@ -3053,7 +3133,7 @@ void Image1Magnify::MagnifyMethod(Image im) {
 	for (int i = 0 + smallX; i < zoomW + smallX; i++) {
 		for (int j = 0 + smallY; j < zoomH + smallY; j++) {
 			if (i == 0 + smallX || j == 0 + smallY || i == zoomW + smallX - 1 || j == zoomH + smallY - 1) {
-				SurfaceModify::PutPixel32(i, j, red, imOut.getSurface());
+				SurfaceModify::PutPixel(i, j, red, imOut.getSurface());
 			}
 		}
 	}
@@ -3096,11 +3176,11 @@ void Image1Magnify::MagnifyMethod(Image im) {
 		for (int j = zoomH * zoomTimes; j > 0; j--) {
 			if (i == 1 || i == std::floor(zoomW * zoomTimes) || j == 1 || j == std::floor(zoomH * zoomTimes)) {
 				//outline
-				SurfaceModify::PutPixel32(im.getSurface()->w - i - bigX - 1, im.getSurface()->h - j - bigY - 1, red, imOut.getSurface());
+				SurfaceModify::PutPixel(im.getSurface()->w - i - bigX - 1, im.getSurface()->h - j - bigY - 1, red, imOut.getSurface());
 			}
 			else {
 				//fill
-				SurfaceModify::PutPixel32(im.getSurface()->w - i - bigX - 1, im.getSurface()->h - j - bigY - 1, SurfaceModify::GetColor(int((zoomW * zoomTimes - i) / zoomTimes + smallX), int((zoomH * zoomTimes - j) / zoomTimes + smallY), im.getSurface()), imOut.getSurface());
+				SurfaceModify::PutPixel(im.getSurface()->w - i - bigX - 1, im.getSurface()->h - j - bigY - 1, SurfaceModify::GetColor(int((zoomW * zoomTimes - i) / zoomTimes + smallX), int((zoomH * zoomTimes - j) / zoomTimes + smallY), im.getSurface()), imOut.getSurface());
 			}
 		}
 	}
@@ -3110,30 +3190,33 @@ void Image1Magnify::MagnifyMethod(Image im) {
 
 Image1Blur::Image1Blur(void) {
 	blurSize = 2;
-	blurType = 0;
+	blurType = blurBox;
 }
 
 void Image1Blur::Reset() {
 	blurSize = 2;
-	blurType = 0;
+	blurType = blurBox;
 }
 
 void Image1Blur::BlurMethod(Image im) { //if <0 than = 0; if < w
-	if (blurType == 0) {
-		for (int i = 0; i < imOut.getSurface()->w; i+=blurSize) {
-			for (int j = 0; j < imOut.getSurface()->h; j+=blurSize) {
-
+	if (blurType == blurBox) {
+		for (int i = 0; i < imOut.getSurface()->w; i+=blurSize*2) {
+			for (int j = 0; j < imOut.getSurface()->h; j+=blurSize*2) {
 				int rSum=0, gSum=0, bSum=0, aSum=0;
 				int count = 0;
-				for (int x = 0; x < blurSize; x++) {
-					for (int y = 0; y < blurSize; y++) {
-						Uint8 r, g, b, a;
-						SDL_GetRGBA(SurfaceModify::GetColor(x + i, y + j, im.getSurface()), im.getSurface()->format, &r, &g, &b, &a);
-						rSum += r;
-						gSum += g;
-						bSum += b;
-						aSum += a;
-						count++;
+				for (int x = 0; x < blurSize*2; x++) {
+					for (int y = 0; y < blurSize*2; y++) {
+
+						if (x + i < imOut.getSurface()->w && y + j < imOut.getSurface()->h) {
+
+							Uint8 r, g, b, a;
+							SDL_GetRGBA(SurfaceModify::GetColor(x+i, y+j, im.getSurface()), im.getSurface()->format, &r, &g, &b, &a);
+							rSum += r;
+							gSum += g;
+							bSum += b;
+							aSum += a;
+							count++;
+						}
 					}
 				}
 				rSum /= count;
@@ -3141,10 +3224,14 @@ void Image1Blur::BlurMethod(Image im) { //if <0 than = 0; if < w
 				bSum /= count;
 				aSum /= count;
 
-				for (int x = 0; x < blurSize; x++) {
-					for (int y = 0; y < blurSize; y++) {
-						Uint32 color = SDL_MapRGBA(imOut.getSurface()->format, rSum, gSum, bSum, aSum);
-						SurfaceModify::PutPixel32(x + i, y + j, color, imOut.getSurface());
+				for (int x = 0; x < blurSize*2; x++) {
+					for (int y = 0; y < blurSize*2; y++) {
+						if (x + i < imOut.getSurface()->w && y + j < imOut.getSurface()->h) {
+
+							Uint32 color = SDL_MapRGBA(imOut.getSurface()->format, rSum, gSum, bSum, aSum);
+							SurfaceModify::PutPixel(x + i, y + j, color, imOut.getSurface());
+
+						}
 					}
 				}
 			}
@@ -3153,28 +3240,30 @@ void Image1Blur::BlurMethod(Image im) { //if <0 than = 0; if < w
 		}
 	}
 
-	else if (blurType == 1) {
+	else if (blurType == blurGauss) {
 
 		for (int i = 0; i < imOut.getSurface()->w; i++) {
 			for (int j = 0; j < imOut.getSurface()->h; j++) {
 				float rSum = 0, gSum = 0, bSum = 0, aSum = 0;
 				float count = 0;
 
-				for (int x = -((blurSize - 1) / 2); x <= ((blurSize - 1) / 2); x++) {
-					for (int y = -((blurSize - 1) / 2); y <= ((blurSize - 1) / 2); y++) {
+				for (int x = -blurSize; x <= blurSize; x++) {
+					for (int y = -blurSize; y <= blurSize; y++) {
 
 						float onthepower = -1 * ((x * x + y * y) / (2.0f * blurSize * blurSize));
 						float value = ((1.0f) / (2.0f * M_PI * blurSize * blurSize)) * std::exp(onthepower);
 
-						if (0 < i + x && i + x < imOut.getSurface()->w - 1 && 0 < j + y && j + y < imOut.getSurface()->h - 1) {
+						int x0 = i + x, y0 = j + y;
+						if (x0 < 0) x0 = 0; if (y0 < 0) y0 = 0; if (x0 > imOut.getSurface()->w - 1) x0 = imOut.getSurface()->w - 1; if (y0 > imOut.getSurface()->h - 1) y0 = imOut.getSurface()->h - 1;
+						//if (0 < i + x && i + x < imOut.getSurface()->w - 1 && 0 < j + y && j + y < imOut.getSurface()->h - 1) {
 							Uint8 r, g, b, a;
-							SDL_GetRGBA(SurfaceModify::GetColor(i+x, j+y, im.getSurface()), im.getSurface()->format, &r, &g, &b, &a);
+							SDL_GetRGBA(SurfaceModify::GetColor(x0, y0, im.getSurface()), im.getSurface()->format, &r, &g, &b, &a);
 							rSum += r * value;
 							gSum += g * value;
 							bSum += b * value;
 							aSum += a * value;
 							count += value;
-						}
+						//}
 
 					}
 				}
@@ -3184,7 +3273,7 @@ void Image1Blur::BlurMethod(Image im) { //if <0 than = 0; if < w
 				aSum /= count;
 
 				Uint32 color = SDL_MapRGBA(imOut.getSurface()->format, rSum, gSum, bSum, aSum);
-				SurfaceModify::PutPixel32(i, j, color, imOut.getSurface());
+				SurfaceModify::PutPixel(i, j, color, imOut.getSurface());
 
 			}
 		}
@@ -3206,34 +3295,34 @@ void Image1Color::ColorMethod(Image im) { //sometimes red line???
 		for (int j = 0; j < imOut.getSurface()->h; j++) {
 			switch (imctype) {
 				case Null: {
-					SurfaceModify::PutPixel32(i, j, SurfaceModify::GetColor(i, j, im.getSurface()), imOut.getSurface());
+					SurfaceModify::PutPixel(i, j, SurfaceModify::GetColor(i, j, im.getSurface()), imOut.getSurface());
 					break;
 				}
 				case GreyScale: {
 					Uint8 grey8 = RegularModify::greyScale(SurfaceModify::GetColor(i, j, im.getSurface()), im.getSurface()->format);
 					Uint32 grey32 = (grey8 << 0) | (grey8 << 8) | (grey8 << 16) |  (255 << 24);
-					SurfaceModify::PutPixel32(i, j, grey32 , imOut.getSurface());
+					SurfaceModify::PutPixel(i, j, grey32 , imOut.getSurface());
 					break;
 				}
 				case Red: {
 					Uint8 red8,g,b,alpha8;
 					SDL_GetRGBA(SurfaceModify::GetColor(i, j, im.getSurface()), im.getSurface()->format, &red8,&g,&b,&alpha8);
 					Uint32 grey32 = (red8 << 0) | (0 << 8) | (0 << 16) | (alpha8 << 24);
-					SurfaceModify::PutPixel32(i, j, grey32, imOut.getSurface());
+					SurfaceModify::PutPixel(i, j, grey32, imOut.getSurface());
 					break;
 				}
 				case Green: {
 					Uint8 r, green8, b, alpha8;
 					SDL_GetRGBA(SurfaceModify::GetColor(i, j, im.getSurface()), im.getSurface()->format, &r, &green8, &b, &alpha8);
 					Uint32 grey32 = (0 << 0) | (green8 << 8) | (0 << 16) | (alpha8 << 24);
-					SurfaceModify::PutPixel32(i, j, grey32, imOut.getSurface());
+					SurfaceModify::PutPixel(i, j, grey32, imOut.getSurface());
 					break;
 				}
 				case Blue: {
 					Uint8 r, g, blue8, alpha8;
 					SDL_GetRGBA(SurfaceModify::GetColor(i, j, im.getSurface()), im.getSurface()->format, &r, &g, &blue8, &alpha8);
 					Uint32 grey32 = (0 << 0) | (0 << 8) | (blue8 << 16) | (alpha8 << 24);
-					SurfaceModify::PutPixel32(i, j, grey32, imOut.getSurface());
+					SurfaceModify::PutPixel(i, j, grey32, imOut.getSurface());
 					break;
 				}
 				case Inverted: {
@@ -3243,7 +3332,7 @@ void Image1Color::ColorMethod(Image im) { //sometimes red line???
 					g = 255 - g;
 					b = 255 - b;
 					Uint32 grey32 = (r << 0) | (g << 8) | (b << 16) | (a << 24);
-					SurfaceModify::PutPixel32(i, j, grey32, imOut.getSurface());
+					SurfaceModify::PutPixel(i, j, grey32, imOut.getSurface());
 					break;
 				}
 			}
@@ -3487,19 +3576,21 @@ void Image2SSIM::SSIMSurface(Image im1, Image im2) {
 			//mean
 			for (int i = 0; i < ssimSize; i++) {
 				for (int j = 0; j < ssimSize ; j++) {
+					int x0 = i + x, y0 = j + y;
+					if (x0 > imOut.getSurface()->w - 1) x0 = imOut.getSurface()->w - 1; if (y0 > imOut.getSurface()->h - 1) y0 = imOut.getSurface()->h - 1;
 
 					Uint8 seged1[colorResult::NumberOfTypes]{};
 					Uint8 seged2[colorResult::NumberOfTypes]{};
-					SDL_GetRGBA(SurfaceModify::GetColor(x + i, y + j, im1.getSurface()), im1.getSurface()->format, &seged1[colorResult::Red], &seged1[colorResult::Green], &seged1[colorResult::Blue], &seged1[colorResult::Alpha]);
-					SDL_GetRGBA(SurfaceModify::GetColor(x + i, y + j, im2.getSurface()), im2.getSurface()->format, &seged2[colorResult::Red], &seged2[colorResult::Green], &seged2[colorResult::Blue], &seged2[colorResult::Alpha]);
+					SDL_GetRGBA(SurfaceModify::GetColor(x0, y0, im1.getSurface()), im1.getSurface()->format, &seged1[colorResult::Red], &seged1[colorResult::Green], &seged1[colorResult::Blue], &seged1[colorResult::Alpha]);
+					SDL_GetRGBA(SurfaceModify::GetColor(x0, y0, im2.getSurface()), im2.getSurface()->format, &seged2[colorResult::Red], &seged2[colorResult::Green], &seged2[colorResult::Blue], &seged2[colorResult::Alpha]);
 					for (int k = 0; k < colorResult::NumberOfTypes; k++) { //r g b a
 						if (k != colorResult::Grey) {
 							mean1[k] += seged1[k];
 							mean2[k] += seged2[k];
 						}
 					}
-					mean1[colorResult::Grey] += RegularModify::greyScale(SurfaceModify::GetColor(x + i, y + j, im1.getSurface()), im1.getSurface()->format);
-					mean2[colorResult::Grey] += RegularModify::greyScale(SurfaceModify::GetColor(x + i, y + j, im2.getSurface()), im2.getSurface()->format);
+					mean1[colorResult::Grey] += RegularModify::greyScale(SurfaceModify::GetColor(x0, y0, im1.getSurface()), im1.getSurface()->format);
+					mean2[colorResult::Grey] += RegularModify::greyScale(SurfaceModify::GetColor(x0, y0, im2.getSurface()), im2.getSurface()->format);
 
 				}
 			}
@@ -3511,16 +3602,19 @@ void Image2SSIM::SSIMSurface(Image im1, Image im2) {
 			//var
 			for (int i = 0; i < ssimSize; i++) {
 				for (int j = 0; j < ssimSize; j++) {
+					int x0 = i + x, y0 = j + y;
+					if (x0 > imOut.getSurface()->w - 1) x0 = imOut.getSurface()->w - 1; if (y0 > imOut.getSurface()->h - 1) y0 = imOut.getSurface()->h - 1;
+
 					Uint8 seged1[colorResult::NumberOfTypes]{};
 					Uint8 seged2[colorResult::NumberOfTypes]{};
-					SDL_GetRGBA(SurfaceModify::GetColor(x + i, y + j, im1.getSurface()), im1.getSurface()->format, &seged1[colorResult::Red], &seged1[colorResult::Green], &seged1[colorResult::Blue], &seged1[colorResult::Alpha]);
-					SDL_GetRGBA(SurfaceModify::GetColor(x + i, y + j, im2.getSurface()), im2.getSurface()->format, &seged2[colorResult::Red], &seged2[colorResult::Green], &seged2[colorResult::Blue], &seged2[colorResult::Alpha]);
+					SDL_GetRGBA(SurfaceModify::GetColor(x0, y0, im1.getSurface()), im1.getSurface()->format, &seged1[colorResult::Red], &seged1[colorResult::Green], &seged1[colorResult::Blue], &seged1[colorResult::Alpha]);
+					SDL_GetRGBA(SurfaceModify::GetColor(x0, y0, im2.getSurface()), im2.getSurface()->format, &seged2[colorResult::Red], &seged2[colorResult::Green], &seged2[colorResult::Blue], &seged2[colorResult::Alpha]);
 					for (int k = 0; k < colorResult::NumberOfTypes - 1; k++) { //r g b a
 						var1[k] += (seged1[k] - mean1[k]);
 						var2[k] += (seged2[k] - mean2[k]);
 					}
-					var1[colorResult::Grey] += (RegularModify::greyScale(SurfaceModify::GetColor(x + i, y + j, im1.getSurface()), im1.getSurface()->format) - mean1[colorResult::Grey]);
-					var2[colorResult::Grey] += (RegularModify::greyScale(SurfaceModify::GetColor(x + i, y + j, im2.getSurface()), im2.getSurface()->format) - mean2[colorResult::Grey]);
+					var1[colorResult::Grey] += (RegularModify::greyScale(SurfaceModify::GetColor(x0, y0, im1.getSurface()), im1.getSurface()->format) - mean1[colorResult::Grey]);
+					var2[colorResult::Grey] += (RegularModify::greyScale(SurfaceModify::GetColor(x0, y0, im2.getSurface()), im2.getSurface()->format) - mean2[colorResult::Grey]);
 				}
 			}
 			for (int i = 0; i < colorResult::NumberOfTypes; i++) {
@@ -3610,7 +3704,7 @@ void Image2SSIM::SSIMSurface(Image im1, Image im2) {
 					if (x + i < imOut.getSurface()->w && y + j < imOut.getSurface()->h) {
 
 						Uint32 color = SDL_MapRGBA(imOut.getSurface()->format, (putColor >> 24) & 0xFF, (putColor >> 16) & 0xFF, (putColor >> 8) & 0xFF, 255 /*alpha1[i][j] + alpha2[i][j]) / 2*/);
-						SurfaceModify::PutPixel32(x + i, y + j, color, imOut.getSurface()); //alpha?
+						SurfaceModify::PutPixel(x + i, y + j, color, imOut.getSurface()); //alpha?
 					}
 				}
 			}
@@ -3747,7 +3841,12 @@ void Image2Merge::editableDrawImage(Image im1, Image im2) {
 	ImVec2 pos = ImGui::GetCursorScreenPos();
 
 	ImGui::Image((void*)(intptr_t)imOut.getTexture(), ImVec2(imOut.getSurface()->w, imOut.getSurface()->h));
-	if (ImGui::IsItemHovered())
+	if (ImGui::IsItemClicked()) {
+
+		upd = std::abs(-(io.MousePos.x - pos.x - ux) * std::sin(slope * M_PI / 180.0) + (io.MousePos.y - pos.y - uy) * std::cos(slope * M_PI / 180.0)) < 25;
+
+	}
+	if (ImGui::IsItemHovered() && ImGui::IsMouseDown(0))
 	{
 		if (upd) {
 			ux = io.MousePos.x - pos.x;
@@ -3756,12 +3855,6 @@ void Image2Merge::editableDrawImage(Image im1, Image im2) {
 			//imOut.textureFromSurface();
 		}
 	}
-	else {
-		upd = false;
-	}
-	if (ImGui::IsItemClicked()) {
-		upd = !upd;
-	}
 
 }
 
@@ -3769,10 +3862,10 @@ void Image2Merge::plotLineMerge(int x, int y, Image im1, Image im2) {
 	for (int i = 0; i < im1.getSurface()->w; i++) {
 		for (int j = 0; j < im1.getSurface()->h; j++) {
 			if ((j <= tan(slope/180*M_PI) * (i - x) + y  && (slope <= 90 || slope >270)) || (j > tan(slope / 180 * M_PI) * (i - x) + y &&  slope>90 && slope <=270 )) {
-				SurfaceModify::PutPixel32(i, j, SurfaceModify::GetColor(i, j, im1.getSurface()), imOut.getSurface());
+				SurfaceModify::PutPixel(i, j, SurfaceModify::GetColor(i, j, im1.getSurface()), imOut.getSurface());
 			}
 			else {
-				SurfaceModify::PutPixel32(i, j, SurfaceModify::GetColor(i, j, im2.getSurface()), imOut.getSurface());
+				SurfaceModify::PutPixel(i, j, SurfaceModify::GetColor(i, j, im2.getSurface()), imOut.getSurface());
 			}
 		}
 	}
@@ -3822,7 +3915,7 @@ void SurfaceModify::plotLineLow(int x0, int y0, int x1, int y1, SDL_Surface* sur
 	int y = y0;
 
 	for (int x = x0; x < x1 ; x++){
-		PutPixel32(x, y, (255 << 24) | (0 << 16) | (0 << 8) | 255, sur);
+		PutPixel(x, y, (255 << 24) | (0 << 16) | (0 << 8) | 255, sur);
 
 		if (D > 0){
 			y = y + yi;
@@ -3864,10 +3957,14 @@ void SurfaceModify::plotLineMixed(int x0, int y0, int x1, int y1, SDL_Surface* s
 
 	for (int f = from; f < to; f++) {
 		if (abs(y1 - y0) < abs(x1 - x0)) {
-			PutPixel32(f, otherAxis, (255 << 24) | (0 << 16) | (0 << 8) | 255, sur);
+			if (f >= 0 && otherAxis >= 0 && f < sur->w && otherAxis < sur->h) {
+				PutPixel(f, otherAxis, (255 << 24) | (0 << 16) | (0 << 8) | 255, sur);
+			}
 		}
 		else {
-			PutPixel32(otherAxis, f, (255 << 24) | (0 << 16) | (0 << 8) | 255, sur);
+			if (f >= 0 && otherAxis >= 0 && otherAxis < sur->w && f < sur->h) {
+				PutPixel(otherAxis, f, (255 << 24) | (0 << 16) | (0 << 8) | 255, sur);
+			}
 		}
 
 		if (D > 0) {
@@ -3893,7 +3990,7 @@ void SurfaceModify::plotLineHigh(int x0,int y0,int x1,int y1, SDL_Surface* sur){
 	int x = x0;
 
 	for (int y=y0;y<y1;y++){
-		PutPixel32(x, y, (255 << 24) | (0 << 16) | (0 << 8) | 255, sur);
+		PutPixel(x, y, (255 << 24) | (0 << 16) | (0 << 8) | 255, sur);
 
 		if (D > 0) {
 			x = x + xi;
@@ -3905,20 +4002,51 @@ void SurfaceModify::plotLineHigh(int x0,int y0,int x1,int y1, SDL_Surface* sur){
 	}
 }
 
-void SurfaceModify::PutPixel32(int x, int y, Uint32 color, SDL_Surface* sur)
+void SurfaceModify::PutPixel(int x, int y, Uint32 color, SDL_Surface* sur)
 {
 	if (SDL_MUSTLOCK(sur))
 		SDL_LockSurface(sur);
-	PutPixel32_nolock(x, y, color,sur);
+	PutPixel_nolock(x, y, color,sur);
 	if (SDL_MUSTLOCK(sur))
 		SDL_UnlockSurface(sur);
 }
 
-void SurfaceModify::PutPixel32_nolock(int x, int y, Uint32 color, SDL_Surface* sur)
+void SurfaceModify::PutPixel_nolock(int x, int y, Uint32 color, SDL_Surface* sur)
 {
-	Uint8* pixel = (Uint8*)sur->pixels;
+	if (sur->format->BitsPerPixel == 8) {
+		Uint8* pixel = (Uint8*)sur->pixels;
+		pixel += (y * sur->pitch) + (x * sizeof(Uint8));
+		*pixel = color & 0xFF;
+	}
+	else if (sur->format->BitsPerPixel == 16) {
+		Uint8* pixel = (Uint8*)sur->pixels;
+		pixel += (y * sur->pitch) + (x * sizeof(Uint16));
+		*((Uint16*)pixel) = color & 0xFFFF;
+	}
+	else if (sur->format->BitsPerPixel == 24) {
+		Uint8* pixel = (Uint8*)sur->pixels;
+		pixel += (y * sur->pitch) + (x * sizeof(Uint8) * 3);
+		if( SDL_BYTEORDER == SDL_BIG_ENDIAN){
+				pixel[0] = (color >> 24) & 0xFF;
+				pixel[1] = (color >> 16) & 0xFF;
+				pixel[2] = (color >> 8) & 0xFF;
+		}
+		else{
+				pixel[0] = color & 0xFF;
+				pixel[1] = (color >> 8) & 0xFF;
+				pixel[2] = (color >> 16) & 0xFF;
+		}
+	}
+	else if (sur->format->BitsPerPixel == 32) {
+		Uint8* pixel = (Uint8*)sur->pixels;
+		pixel += (y * sur->pitch) + (x * sizeof(Uint32));
+		*((Uint32*)pixel) = color;
+	}
+
+	/*Uint8* pixel = (Uint8*)sur->pixels;
 	pixel += (y * sur->pitch) + x * sur->format->BytesPerPixel;
-	*((Uint32*)pixel) = color;
+	*((Uint32*)pixel) = color;*/
+
 }
 
 Uint32 SurfaceModify::GetColor(int x, int y, SDL_Surface* sur) {
