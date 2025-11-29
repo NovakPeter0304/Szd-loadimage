@@ -14,16 +14,14 @@
 class Image {
 public:
 	Image() : surface(nullptr), texture(0) {}
-	~Image(void);
 
-	SDL_Surface* getSurface() { return surface; }
+	SDL_Surface* getSurface() const { return surface; }
 	void setSurface(SDL_Surface* surface);
-	GLuint getTexture() { return texture; }
+	GLuint getTexture() const { return texture; }
 	void textureFromSurface();
 
-	void drawImage(); //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-	void drawImage(int size, bool selected);
-	virtual void editableDrawImage(); //check
+	void drawImage() const;
+	void drawImage(int size, bool selected) const;
 
 protected:
 	SDL_Surface* surface = nullptr;
@@ -34,19 +32,26 @@ protected:
 class Folder{ 
 public:
 	Folder(void);
-	//bool Load(char* s);
+	
 	void Append(Image app);
 	void Append(Folder app);
+
 	void createIconImageFromImages();
+	Image getIcon() const { return icon; }
 
+	int getIconN() const { return iconN; }
+	void setIconN(int i) { iconN = i; }
+	std::vector<Image> getImages()  const { return images; }
+	void pushImages(Image im) { images.push_back(im); }
+
+protected:
 	Image icon;
-
 	std::vector<Image> images;
 	int iconN;
 };
 
-enum imageOrFolder { iofImage, iofFolder, iofEmpty };
-struct ImageFolder { Image im; Folder f; imageOrFolder iof = iofEmpty; };
+enum ImageOrFolderEnum { iofImage, iofFolder, iofEmpty };
+struct ImageFolder { Image im; Folder f; ImageOrFolderEnum iof = iofEmpty; };
 
 class Operations{};
 
@@ -58,9 +63,9 @@ class Image0FromFile : public Image0 {
 public:
 	Image0FromFile(void);
 	ImageFolder Load(char* s, bool popup);
-	enum loadTypeEnum { PICTURE, FOLDER };
+	enum LoadTypeEnum { PICTURE, FOLDER };
 
-	int getLoadType() { return loadType; }
+	int getLoadType() const { return loadType; }
 	void setLoadType(int t) { loadType = t; }
 
 protected:
@@ -72,42 +77,47 @@ public:
 	Image0StaticNoise(void);
 
 	void StaticMethod();
+	void Reset();
 
-	int width;
-	int height;
 	std::vector<ImVec4> color;
 	std::vector<ImVec4> backup_color;
 	ImVec4 saved_palette[32];
 
-	Image staticnoise;
+	Image getImOut() const { return imOut; }
+	int getWidth() const { return width; }
+	int getHeight() const { return height; }
+	void setWidth(int w) { width = w; }
+	void setHeight(int h) { height = h; }
 
-	void Reset();
 protected:
+	Image imOut;
+	int width;
+	int height;
+
 };
 
 class Image1 : public Operations {
 public:
 	Image1(void);
-	//Image1(Image im);
 
-	void setImage(Image im); //one
+	void setImage(Image im); 
+	Image getImOut() const { return imOut; }
 
-	Image imOut;
 protected:
+	Image imOut;
 };
 
 class Image1Magnify : public Image1 {
 public:
 	Image1Magnify(void);
-	//Image1Magnify(Image im);
 
-	int getZoomW() { return zoomW; }
+	int getZoomW() const { return zoomW; }
 	void setZoomW(int w) { zoomW = w; }
-	int getZoomH() { return zoomH; }
+	int getZoomH() const { return zoomH; }
 	void setZoomH(int h) { zoomH = h; }
-	float getZoomTimes() { return zoomTimes; }
+	float getZoomTimes() const { return zoomTimes; }
 	void setZoomTimes(float t) { zoomTimes = t; }
-	bool getSmallChange() { return smallChange; }
+	bool getSmallChange() const { return smallChange; }
 	void setSmallChange(bool b) { smallChange = b; }
 
 	void editableDrawImage(Image im);
@@ -134,10 +144,16 @@ public:
 	void Reset();
 	void BlurMethod(Image im);
 
-	enum blurTypeEnum {blurBox,blurGauss};
-	blurTypeEnum blurType;
-	int blurSize;
+	enum BlurTypeEnum {blurBox,blurGauss};
+
+	int getBlurSize() const { return blurSize; }
+	void setBlurSize(int s) { blurSize = s; }
+	BlurTypeEnum getBlurType() const { return blurType; }
+	void setBlurType(BlurTypeEnum e) { blurType = e; }
+
 protected:
+	BlurTypeEnum blurType;
+	int blurSize;
 };
 
 class Image1Color : public Image1 {
@@ -147,46 +163,52 @@ public:
 	void Reset();
 	void ColorMethod(Image im);
 
-	enum ImageColorType {Null,GreyScale,Red,Green,Blue,Inverted};  //+null?
+	enum ImageColorType {Null,GreyScale,Red,Green,Blue,Inverted};
 
-	int imctype;
+	void setImcType(ImageColorType i) { imctype = i; }
+	ImageColorType getImcType() const { return imctype; }
+
+protected:
+	ImageColorType imctype;
+};
+
+class Image1Save : public Image1 {
+public:
+	bool SaveFolder(Folder f, std::string path, int n);
+	bool Save(Image im, char* cstr);
 };
 
 class Image2 : public Operations {
 public:
 	Image2(void);
-	//Image2(Image im1,Image im2);
 
 	void setImage(Image im);
-	void setImageFolder(ImageFolder imf) { storediof = imf; };
+	Image getImOut() const { return imOut; }
 
-	ImageFolder storediof;
-	Image imOut;
 protected:
+	Image imOut;
 };
 
 class Image2SSIM : public Image2 {
 public:
 	Image2SSIM(void);
-	//Image2SSIM(Image im1, Image im2);
 
-	void SSIMSurface(Image im1,Image im2);
-	void editableDrawImage();
+	void SSIMMethod(Image im1,Image im2);
+
 	void Reset();
 
-	int getSsimColor() { return ssimColor; }
+	int getSsimColor() const { return ssimColor; }
 	void setSsimColor(int c) { ssimColor = c; }
-	int getSsimSize() { return ssimSize; }
+	int getSsimSize() const { return ssimSize; }
 	void setSsimSize(int s) { ssimSize = s; }
-	float getSsimOsszeg() { return ssimOsszeg; }
+	float getSsimOsszeg() const { return ssimOsszeg; }
 
 protected:
 	enum colorResult { Red, Green, Blue, Alpha, Grey, NumberOfTypes};
-	std::vector<float> SSIMmethod(std::vector<std::vector<Uint32>> window1, std::vector<std::vector<Uint32>> window2, Image im1, Image im2);
 
 	int ssimColor;
 	int ssimSize;
-	float C1 = 0.01f, C2 = 0.03f; //const?
+	float C1 = 0.01f, C2 = 0.03f; 
 	float ssimOsszeg;
 
 };
@@ -194,36 +216,22 @@ protected:
 class Image2Merge : public Image2 {
 public:
 	Image2Merge(void);
-	//Image2Merge(Image im1, Image im2);
 
-	void plotLineMerge(int x, int y, Image im1, Image im2); //rm x y
+	void MergeMethod(Image im1, Image im2); 
 	void editableDrawImage(Image im1, Image im2);
 	void Reset();
 
-	float getSlope() { return slope; }
+	float getSlope() const { return slope; }
 	void setSlope(float s) { slope = s; }
-	int getUx() { return ux; }
-	int getUy() { return uy; }
+	int getUx() const { return ux; }
+	int getUy() const { return uy; }
 
-	bool swap = false;
 
 protected:
+	bool swap;
 	float slope;
 	bool upd;
 	int ux, uy;
-};
-
-/*class StoredOperaionsClass {
-public:
-	enum operationTypeEnum { oteImage1Magnify,oteImage1Blur,oteImage1Color,oteImage2SSIM,oteImage2Merge };
-	struct storedOperation { Image1Magnify i1m; Image1Blur i1b; Image1Color i1c ; Image2SSIM i2s; Image2Merge i2m; operationTypeEnum ote = oteImage1Magnify; std::vector<int> affectedElements; };
-	std::vector<storedOperation> storedOperationsElement;
-};*/
-
-class Image1Save : public Image1 { //image0??????
-public:
-	bool SaveFolder(Folder f, std::string path, int n/*, StoredOperaionsClass storedOperationsElement*/);
-	bool Save(Image im, char* cstr);
 };
 
 class SurfaceModify {
@@ -247,8 +255,6 @@ public:
 	static Uint32 heatmapColor(float value);
 	static bool Verify(char* filePath);
 
-	//add the save here
-
 };
 
 class CMyApp
@@ -258,30 +264,24 @@ public:
 	CMyApp(void);
 	~CMyApp(void);
 
-	//basic
 	bool Init();
 	void Clean();
-	//void Update();
 	void Render();
-
-	void TestMethod();
 
 	void Resize(int, int);
 
-
 protected:
+	void TestMethod();
 
 	void Back();
-	void SetBasicUI();//rn
-	void PushStyleColorGreenButton();
+	void SetBasicUI_5Col_2Var() const;
+	void PushStyleColorGreenButton_3Col() const;
 
 	ImFont* arial;
 	Image arrow_left, arrow_right,arrow_left_unavailable,arrow_right_unavailable;
 
 	std::vector<ImageFolder> imfVec;
 	std::vector<int> selectedImFVec;
-
-	//std::vector<StoredOperaionsClass> storedOperationsVector;
 
 	enum ColorEnum {
 		TEXT_LIGHT,
@@ -310,13 +310,14 @@ protected:
 		BUTTON_GREY,
 		BUTTON_GREY_HOVERED,
 		BUTTON_GREY_ACTIVE,
+		COLORPICKER_FRAMEBG,
 
 		NumberOfTypes
 	};
 
 	ImVec4 Colors[ColorEnum::NumberOfTypes];
 
-	enum ImageEnum { //rn
+	enum MenuEnum {
 		OPERATIONSENUM,
 
 		STATICNOISEENUM,
@@ -331,7 +332,7 @@ protected:
 		MERGEENUM
 	};
 
-	ImageEnum currentImageEnum;
+	MenuEnum currentMenuEnum;
 
 	ImGuiWindowFlags window_flags;
 
@@ -347,5 +348,4 @@ protected:
 	Image2SSIM im2ssim;
 	Image2Merge im2merge;
 
-	//Folder imFold;
 };
