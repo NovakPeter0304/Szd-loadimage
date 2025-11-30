@@ -91,6 +91,24 @@ bool CMyApp::Init()
 
 void CMyApp::Clean()
 {
+	im0stat.getImOut().freeSurface();
+	im1blur.getImOut().freeSurface();
+	im1col.getImOut().freeSurface();
+	im1mag.getImOut().freeSurface();
+	im1sav.getImOut().freeSurface();
+	im2merge.getImOut().freeSurface();
+	im2ssim.getImOut().freeSurface();
+
+	for (int i = 0; i < imfVec.size(); i++) {
+		if (imfVec[i].iof == iofImage) {
+			imfVec[i].im.freeSurface();
+		}
+		else if (imfVec[i].iof == iofFolder) {
+			for (int j = 0; j < imfVec[i].f.getImages().size(); j++) {
+				imfVec[i].f.getImages()[j].freeSurface();
+			}
+		}
+	}
 
 }
 
@@ -130,7 +148,7 @@ void CMyApp::Render()
 		}
 	}
 
-	ImGui::BeginChild("Pictures", ImVec2(0, imfVec.size() == 0 ? 100 : isFolder? 450 : 395), false); {
+	ImGui::BeginChild("Pictures", ImVec2(0, imfVec.size() == 0 ? 100 : isFolder? 455 : 395), false); {
 
 		imFo->Scale = 1.5f;	ImGui::PushFont(imFo);
 		ImGui::NewLine(); RegularModify::CursorPos(20); ImGui::Text("Images: ");
@@ -143,7 +161,7 @@ void CMyApp::Render()
 			ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 3.0f);
 			ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(2.0f, 1.0f));
 
-			ImGui::BeginChild("scrolling", ImVec2(0, isFolder? 385 : 330), false, ImGuiWindowFlags_HorizontalScrollbar); {
+			ImGui::BeginChild("scrolling", ImVec2(0, isFolder? 390 : 330), false, ImGuiWindowFlags_HorizontalScrollbar); {
 				for (int i = 0; i < imfVec.size(); i++) {
 
 					switch (imfVec[i].iof) {
@@ -185,6 +203,7 @@ void CMyApp::Render()
 
 					switch (imfVec[i].iof) {
 						case iofFolder: {
+							ImGui::SameLine();
 							RegularModify::CursorPos(20 + 315 * i);
 							
 							ImGui::PushID(i);
@@ -218,8 +237,6 @@ void CMyApp::Render()
 							break;
 						}
 					}
-					ImGui::SameLine();
-
 				}
 			}
 			ImGui::EndChild();
@@ -1580,8 +1597,8 @@ void CMyApp::Render()
 
 			ImGui::NewLine();
 
-			Image* im1;
-			Image* im2;
+			Image* im1 = nullptr;
+			Image* im2 = nullptr;
 			if (imfVec[selectedImFVec[0]].iof == iofImage) {
 				if (imfVec[selectedImFVec[1]].iof == iofImage) {
 					im1 = &imfVec[selectedImFVec[0]].im;
@@ -1632,6 +1649,7 @@ void CMyApp::Render()
 				}
 				ImGui::PopItemWidth();
 			}
+
 			ImGui::EndChild();
 			ImGui::NewLine();
 
@@ -1796,6 +1814,7 @@ void CMyApp::Back() {
 	ImGui::PushStyleColor(ImGuiCol_ButtonHovered, Colors[ColorEnum::BUTTON_RED_HOVERED]);
 	ImGui::PushStyleColor(ImGuiCol_ButtonActive, Colors[ColorEnum::BUTTON_RED_ACTIVE]);
 	if (ImGui::Button("Back", ImVec2(150, 50))) {
+
 		currentMenuEnum = OPERATIONSENUM;
 	}
 	ImGui::PopStyleColor(3);
@@ -2446,6 +2465,13 @@ void Image::drawImage(int size, bool selected) const {
 	ImGui::PopStyleColor(2);
 }
 
+void Image::freeSurface() {
+	if (surface != nullptr) {
+		SDL_FreeSurface(surface);
+		surface = nullptr;
+	}
+}
+
 Folder::Folder(void){
 	iconN = 0;
 }
@@ -2616,9 +2642,7 @@ Image1::Image1(void) {}
 
 void Image1::setImage(Image im) {
 
-	if (imOut.getSurface() != nullptr) {
-		SDL_FreeSurface(imOut.getSurface());
-	}
+	imOut.freeSurface();
 
 	SDL_Surface* source = im.getSurface();
 	SDL_Surface* destination = SDL_CreateRGBSurfaceWithFormat(0,
@@ -3041,9 +3065,8 @@ bool Image1Save::Save(Image im, char* cstr) {
 Image2::Image2(void) {}
 
 void Image2::setImage(Image im) {
-	if (imOut.getSurface() != nullptr) {
-		SDL_FreeSurface(imOut.getSurface());
-	}
+
+	imOut.freeSurface();
 
 	SDL_Surface* source = im.getSurface();
 	SDL_Surface* destination = SDL_CreateRGBSurfaceWithFormat(0,

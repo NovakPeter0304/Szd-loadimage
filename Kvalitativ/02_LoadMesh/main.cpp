@@ -19,7 +19,7 @@ void exitProgram()
 {
 	SDL_Quit();
 
-	std::cout << "Kilépéshez nyomj meg egy billentyût..." << std::endl;
+	std::cout << "Press a button to exit..." << std::endl;
 	std::cin.get();
 }
 
@@ -29,7 +29,7 @@ int main(int argc, char* args[])
 
 	if (SDL_Init(SDL_INIT_VIDEO) == -1)
 	{
-		std::cout << "[SDL indítása]Hiba az SDL inicializálása közben: " << SDL_GetError() << std::endl;
+		std::cout << "[Starting SDL]Error while initializing SDL: " << SDL_GetError() << std::endl;
 		return 1;
 	}
 
@@ -56,7 +56,7 @@ int main(int argc, char* args[])
 
 	if (win == 0)
 	{
-		std::cout << "[Ablak létrehozása]Hiba az SDL inicializálása közben: " << SDL_GetError() << std::endl;
+		std::cout << "[Create window]Error while initializing SDL: " << SDL_GetError() << std::endl;
 		return 1;
 	}
 
@@ -64,7 +64,7 @@ int main(int argc, char* args[])
 	SDL_GLContext	context = SDL_GL_CreateContext(win);
 	if (context == 0)
 	{
-		std::cout << "[OGL context létrehozása]Hiba az SDL inicializálása közben: " << SDL_GetError() << std::endl;
+		std::cout << "[Create OGL context]Error while initializing SDL: " << SDL_GetError() << std::endl;
 		return 1;
 	}
 
@@ -74,7 +74,7 @@ int main(int argc, char* args[])
 	GLenum error = glewInit();
 	if (error != GLEW_OK)
 	{
-		std::cout << "[GLEW] Hiba az inicializálás során!" << std::endl;
+		std::cout << "[GLEW]Error while initializing!" << std::endl;
 		return 1;
 	}
 
@@ -89,7 +89,7 @@ int main(int argc, char* args[])
 		SDL_GL_DeleteContext(context);
 		SDL_DestroyWindow(win);
 
-		std::cout << "[OGL context létrehozása] Nem sikerült létrehozni az OpenGL context-et! Lehet, hogy az SDL_GL_SetAttribute(...) hívásoknál az egyik beállítás helytelen." << std::endl;
+		std::cout << "[Creating OGL context]Cannot crrate the OpenGL context! Maybe when calling SDL_GL_SetAttribute(...) one of the settings is incorrect." << std::endl;
 
 		return 1;
 	}
@@ -108,7 +108,7 @@ int main(int argc, char* args[])
 	{
 		SDL_GL_DeleteContext(context);
 		SDL_DestroyWindow(win);
-		std::cout << "[app.Init] Az alkalmazás inicializálása közben hibatörtént!" << std::endl;
+		std::cout << "[app.Init]Error while initializing the application!" << std::endl;
 		return 1;
 	}
 

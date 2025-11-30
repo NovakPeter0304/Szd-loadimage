@@ -19,6 +19,7 @@ public:
 	void setSurface(SDL_Surface* surface);
 	GLuint getTexture() const { return texture; }
 	void textureFromSurface();
+	void freeSurface();
 
 	void drawImage() const;
 	void drawImage(int size, bool selected) const;
